@@ -14,6 +14,8 @@ namespace micro
         {
         public:
 
+            typedef boost::asio::ip::tcp::endpoint endpoint_type;
+
             virtual void fire_exception_caught(const std::exception & e) = 0;
 
             virtual void fire_accepted() = 0;
@@ -32,13 +34,11 @@ namespace micro
 
             virtual void fire_channel_write_complete() = 0;
 
-            virtual void fire_channel_writablity_changed() = 0;
+            virtual void fire_bind(const endpoint_type &local_addr) = 0;
 
-            virtual void bind(const socket_address &local_addr) = 0;
+            virtual void fire_connect(const endpoint_type &remote_addr) = 0;
 
-            virtual void connect(const socket_address &local_addr, const socket_address &remote_addr) = 0;
-
-            virtual void close() = 0;
+            virtual void fire_close() = 0;
 
         };
 

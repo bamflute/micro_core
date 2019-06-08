@@ -24,15 +24,17 @@
     <ClInclude Include="..\src\common\common.hpp" />
     <ClInclude Include="..\src\common\error.hpp" />
     <ClInclude Include="..\src\common\any_map.hpp" />
+    <ClInclude Include="..\src\io\byte_buf.hpp" />
     <ClInclude Include="..\src\io\channel.hpp" />
     <ClInclude Include="..\src\io\context_chain.hpp" />
     <ClInclude Include="..\src\io\head_context.hpp" />
     <ClInclude Include="..\src\io\io_handler.hpp" />
     <ClInclude Include="..\src\io\io_context.hpp" />
     <ClInclude Include="..\src\io\channel_id_allocator.h" />
-    <ClInclude Include="..\src\io\channel_initializer.hpp" />
     <ClInclude Include="..\src\io\base_context.hpp" />
+    <ClInclude Include="..\src\io\io_handler_initializer.hpp" />
     <ClInclude Include="..\src\io\mask.hpp" />
+    <ClInclude Include="..\src\io\tcp_acceptor.hpp" />
     <ClInclude Include="..\src\io\tcp_channel.hpp" />
     <ClInclude Include="..\src\io\tcp_connector.hpp" />
     <ClInclude Include="..\src\logger\logger.hpp" />
@@ -41,6 +43,7 @@
     <ClInclude Include="..\src\module\module.hpp" />
     <ClInclude Include="..\src\module\module_func.h" />
     <ClInclude Include="..\src\module\session.hpp" />
+    <ClInclude Include="..\src\test\test_io.h" />
     <ClInclude Include="..\src\thread\lock.hpp" />
     <ClInclude Include="..\src\thread\nio_thread_pool.hpp" />
     <ClInclude Include="..\src\timer\base_timer.hpp" />
@@ -55,6 +58,8 @@
     <ClCompile Include="..\src\io\channel_id_allocator.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\module\module_func.cpp" />
+    <ClCompile Include="..\src\test\test_bus.cpp" />
+    <ClCompile Include="..\src\test\test_io.cpp" />
     <ClCompile Include="..\src\timer\timer_func.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

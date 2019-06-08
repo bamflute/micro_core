@@ -4,7 +4,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <thread/nio_thread_pool.hpp>
 #include <timer/timer_common.hpp>
-
+#include <common/common.hpp>
 
 namespace micro
 {

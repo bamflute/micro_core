@@ -16,8 +16,15 @@ namespace micro
 
             typedef std::unordered_map<std::string, boost::any> map_type;
 
+            virtual ~any_map() = default;
+
+            void clear()
+            {
+                m_opts.clear();
+            }
+
             template<typename T>
-            void option(std::string name, T value)
+            void set(std::string name, T value)
             {
                 m_opts[name] = value;
             }

@@ -1,5 +1,5 @@
 #include "channel_id_allocator.h"
-
+#include <common/common.hpp>
 
 automic_uint64_type g_channel_id(0);
 

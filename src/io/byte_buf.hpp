@@ -24,7 +24,7 @@ namespace micro
 
         public:
 
-            byte_buf(int32_t len, bool auto_alloc)
+            byte_buf(int32_t len, bool auto_alloc = true)
                 : m_len(len)
                 , m_buf(new char[len](), std::default_delete<char[]>())
                 , m_write_ptr(m_buf.get())

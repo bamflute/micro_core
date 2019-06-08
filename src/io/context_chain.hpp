@@ -4,6 +4,7 @@
 #include <memory>
 #include <io/io_handler.hpp>
 #include <io/io_context.hpp>
+#include <io/head_context.hpp>
 
 
 #define IO_CONTEXT    "io_context"
@@ -20,8 +21,14 @@ namespace micro
 
             typedef std::shared_ptr<io_handler> handler_ptr_type;
             typedef std::shared_ptr<io_context> context_ptr_type;
+            typedef boost::asio::ip::tcp::endpoint endpoint_type;
 
             context_chain() : m_head(std::make_shared<head_context>()) {}
+
+            void clear()
+            {
+                m_vars.clear();
+            }
 
             template<typename T>
             T get(std::string var_name)
@@ -43,21 +50,20 @@ namespace micro
             virtual context_chain & add_last(std::string name, handler_ptr_type handler)
             {
                 context_ptr_type ctx = new_context(name, handler);
-
+                assert(nullptr != ctx);
+                
                 //set connector/channel/acceptor
                 assert(m_vars.count(IO_CONTEXT));
                 ctx->set(IO_CONTEXT, m_vars.get(IO_CONTEXT));
 
-                assert(ctx != nullptr);
-
-                if (nullptr == m_head)
+                assert(nullptr != m_head);
+                if (nullptr == m_head->m_next)
                 {
                     m_head->m_next = ctx;
                     ctx->m_prev = m_head;
+                    
                     return  *this;
                 }
-
-                assert(nullptr != m_head);
 
                 context_ptr_type tail = get_tail();
                 tail->m_next = ctx;
@@ -71,7 +77,7 @@ namespace micro
                 if (m_head) m_head->fire_exception_caught(e);
             }
 
-            virtual void fir_accepted()
+            virtual void fire_accepted()
             {
                 if (m_head) m_head->fire_accepted();
             }   
@@ -111,24 +117,19 @@ namespace micro
                 if (m_head) m_head->fire_channel_write_complete();
             }
 
-            virtual void fire_channel_writablity_changed()
+            virtual void fire_bind(const endpoint_type &local_addr)
             {
-                if (m_head) m_head->fire_channel_writablity_changed();
-            }
-
-            virtual void bind(const socket_address &local_addr)
-            {
-                if (m_head) m_head->fire_channel_writablity_changed();
+                if (m_head) m_head->fire_bind(local_addr);
             }         
 
-            virtual void connect(const socket_address &local_addr, const socket_address &remote_addr)
+            virtual void fire_connect(const endpoint_type &remote_addr)
             {
-                if (m_head) m_head->fire_connect(local_addr, remote_addr);
+                if (m_head) m_head->fire_connect(remote_addr);
             }
 
-            virtual void close()
+            virtual void fire_close()
             {
-                if (m_head) m_head->close();
+                if (m_head) m_head->fire_close();
             }
 
 

@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include <boost/any.hpp>
+#include <common/any_map.hpp>
 #include <common/common.hpp>
 #include <io/mask.hpp>
 #include <io/base_context.hpp>
@@ -16,15 +16,25 @@ namespace micro
         {
         public:
 
-            typedef boost::any any_type;
             typedef std::shared_ptr<io_handler> handler_ptr_type;
             typedef std::shared_ptr<io_context> context_ptr_type;
 
-            io_context(handler_ptr_type handler)
-                : m_handler(handler)
+            io_context(std::string name, handler_ptr_type handler)
+                : m_name(name)
+                , m_handler(handler)
                 , m_next(nullptr)
                 , m_prev(nullptr)
             {}
+
+            virtual ~io_context() { clear(); }
+
+            void clear()
+            {
+                m_vars.clear();
+                m_next = nullptr;
+                m_prev = nullptr;
+                m_handler = nullptr;
+            }                
 
             template<typename T>
             T get(std::string var_name)
@@ -61,7 +71,7 @@ namespace micro
                     m_handler->exception_caught(*this, e);
                 }
             }
-
+            
             virtual void fire_accepted()
             {
                 context_ptr_type next = find_next_context(MASK_ACCEPTED);
@@ -102,7 +112,7 @@ namespace micro
 
             virtual void fire_channel_active()
             {
-                context_ptr_type next = find_next_context(MASK_CHANNEL_REGISTERED);
+                context_ptr_type next = find_next_context(MASK_CHANNEL_ACTIVE);
                 if (next)
                 {
                     next->invoke_channel_active();
@@ -121,7 +131,7 @@ namespace micro
 
             virtual void fire_channel_inactive()
             {
-                context_ptr_type next = find_next_context(MASK_CHANNEL_REGISTERED);
+                context_ptr_type next = find_next_context(MASK_CHANNEL_INACTIVE);
                 if (next)
                 {
                     next->invoke_channel_inactive();
@@ -214,26 +224,7 @@ namespace micro
                 }
             }
 
-            virtual void fire_channel_writablity_changed()
-            {
-                context_ptr_type next = find_next_context(MASK_CHANNEL_REGISTERED);
-                if (next)
-                {
-                    next->invoke_channel_writablity_changed();
-                }
-            }
-
-            virtual void invoke_channel_writablity_changed()
-            {
-                if (m_handler)
-                {
-                    auto handler = DYN_CAST(channel_inbound_handler, m_handler);
-                    assert(handler != nullptr);
-                    handler->channel_writablity_changed(*this);
-                }
-            }
-
-            virtual void bind(const socket_address &local_addr)
+            virtual void fire_bind(const endpoint_type &local_addr)
             {
                 context_ptr_type next = find_next_context(MASK_BIND);
                 if (next)
@@ -242,36 +233,36 @@ namespace micro
                 }
             }
 
-            virtual void invoke_bind(const socket_address &local_addr)
+            virtual void invoke_bind(const endpoint_type &local_addr)
             {
                 if (m_handler)
                 {
-                    auto handler = DYN_CAST(channel_outbound_handler, m_handler);
+                    auto handler = DYN_CAST(tcp_connector_handler, m_handler);
                     assert(handler != nullptr);
                     handler->bind(*this, local_addr);
                 }
             }
 
-            virtual void connect(const socket_address &local_addr, const socket_address &remote_addr)
+            virtual void fire_connect(const endpoint_type &remote_addr)
             {
                 context_ptr_type next = find_next_context(MASK_CONNECT);
                 if (next)
                 {
-                    next->invoke_connect(local_addr);
+                    next->invoke_connect(remote_addr);
                 }
             }
 
-            virtual void invoke_connect(const socket_address &local_addr, const socket_address &remote_addr)
+            virtual void invoke_connect(const endpoint_type &remote_addr)
             {
                 if (m_handler)
                 {
-                    auto handler = DYN_CAST(channel_outbound_handler, m_handler);
+                    auto handler = DYN_CAST(tcp_connector_handler, m_handler);
                     assert(handler != nullptr);
-                    handler->connect(*this, local_addr, remote_addr);
+                    handler->connect(*this, remote_addr);
                 }
             }
 
-            virtual void close()
+            virtual void fire_close()
             {
                 context_ptr_type next = find_next_context(MASK_CLOSE);
                 if (next)
@@ -310,11 +301,13 @@ namespace micro
 
         protected:
 
+            std::string m_name;
+
             any_map m_vars;
 
             handler_ptr_type m_handler;
 
-            uint32_t m_mask;
+            std::uint32_t m_mask;
 
         };
 
