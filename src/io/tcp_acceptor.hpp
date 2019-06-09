@@ -34,7 +34,9 @@ namespace micro
                 : m_ios(ios)
                 , m_endpoint(endpoint)
                 , m_acceptor(*ios.lock(), endpoint, true)
-            {}
+            {
+                
+            }
 
             virtual ~tcp_acceptor() = default;
 
@@ -65,6 +67,8 @@ namespace micro
                 {
                     return;
                 }
+
+                m_context_chain.set(IO_CONTEXT, this->shared_from_this());
 
                 m_acceptor_initializer = acceptor_initializer;
                 m_acceptor_initializer->init(m_context_chain);

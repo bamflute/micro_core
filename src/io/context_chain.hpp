@@ -30,10 +30,10 @@ namespace micro
                 m_vars.clear();
             }
 
-            template<typename T>
-            T get(std::string var_name)
+
+            boost::any get(std::string var_name)
             {
-                return m_vars.get<T>(var_name);
+                return m_vars.get(var_name);
             }
 
             template<typename T>
@@ -50,11 +50,7 @@ namespace micro
             virtual context_chain & add_last(std::string name, handler_ptr_type handler)
             {
                 context_ptr_type ctx = new_context(name, handler);
-                assert(nullptr != ctx);
-                
-                //set connector/channel/acceptor
-                assert(m_vars.count(IO_CONTEXT));
-                ctx->set(IO_CONTEXT, m_vars.get(IO_CONTEXT));
+                assert(nullptr != ctx);            
 
                 assert(nullptr != m_head);
                 if (nullptr == m_head->m_next)
@@ -137,7 +133,12 @@ namespace micro
 
             context_ptr_type new_context(std::string name, handler_ptr_type handler)
             {
-                return std::make_shared<io_context>(name, handler);
+                auto ioc = std::make_shared<io_context>(name, handler);
+                
+                assert(this->count(IO_CONTEXT));
+                ioc->set(IO_CONTEXT, this->get(std::string(IO_CONTEXT)));
+
+                return ioc;
             }
 
             context_ptr_type get_tail()

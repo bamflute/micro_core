@@ -3,12 +3,13 @@
 
 #include <memory>
 #include <cassert>
-#include <io/channel.hpp>
 #include <message/message.hpp>
 #include <boost/asio.hpp>
 #include <boost/any.hpp>
 #include <boost/exception/all.hpp>
 #include <io/io_handler_initializer.hpp>
+#include <io/byte_buf.hpp>
+#include <io/channel.hpp>
 
 
 #define MAX_RECV_BUF_LEN       10240
@@ -45,7 +46,9 @@ namespace micro
                 , m_str_channel_id(m_channel_id.to_string())
                 , m_ios(ios)
                 , m_socket(*ios)
-            {}
+            {
+
+            }
 
             virtual ~tcp_channel() 
             { 
@@ -78,6 +81,8 @@ namespace micro
                 {
                     return;
                 }
+
+                m_inbound_chain.set(IO_CONTEXT, this->shared_from_this());
             
                 m_inbound_initializer = io_handler_initializer;
                 m_inbound_initializer->init(m_inbound_chain);
@@ -89,12 +94,24 @@ namespace micro
                 {
                     return;
                 }
+
+                m_outbound_chain.set(IO_CONTEXT, this->shared_from_this());
                 
                 m_outbound_initializer = io_handler_initializer;
                 m_outbound_initializer->init(m_outbound_chain);
             }
 
+            //get object in tcp channel
+
             virtual boost::asio::ip::tcp::socket & socket() { return m_socket; }
+
+            virtual buf_ptr_type recv_buf() { return m_recv_buf; }
+
+            virtual buf_ptr_type send_buf() { return m_send_buf; }
+
+            std::shared_ptr<message> front_message() { return m_queue.front(); }
+
+            //
 
             virtual int32_t init()
             {

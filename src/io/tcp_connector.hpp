@@ -34,13 +34,15 @@ namespace micro
             typedef std::shared_ptr<io_handler_initializer> initializer_ptr_type;
             typedef channel_source channel_type_id;
 
-            tcp_connector() : m_connected(false) {}
+            tcp_connector() : m_connected(false) { }
 
             virtual ~tcp_connector() { m_context_chain.clear(); }
 
             bool is_connected() { return m_connected; }            
 
             context_chain & context_chain() { return m_context_chain; }
+
+            channel_ptr_type channel() { return m_channel; }
 
 
             template<typename T>
@@ -67,6 +69,8 @@ namespace micro
                 {
                     return;
                 }
+
+                m_context_chain.set(IO_CONTEXT, this->shared_from_this());
             
                 m_connector_initializer = connector_initializer;
                 m_connector_initializer->init(m_context_chain);
@@ -74,8 +78,26 @@ namespace micro
 
             void channel_initializer(initializer_ptr_type channel_inbound_initializer, initializer_ptr_type channel_outbound_initializer)
             {
+                assert(nullptr != channel_inbound_initializer && nullptr != channel_outbound_initializer);
+
                 m_channel_inbound_initializer = channel_inbound_initializer;
                 m_channel_outbound_initializer = channel_outbound_initializer;
+            }
+
+            int32_t init()
+            {
+                //channel
+                channel_type_id channel_id(CLIENT_TYPE, get_new_channel_id());
+                m_channel = std::make_shared<tcp_channel>(m_channel_thr_pool->get_ios(), channel_id);
+
+                //channel option
+
+                //channel handler initializer
+                m_channel->channel_inbound_initializer(m_channel_inbound_initializer);
+                m_channel->channel_outbound_initializer(m_channel_outbound_initializer);
+
+                m_channel->init();
+                return ERR_SUCCESS;
             }
 
             virtual int32_t connect(const endpoint_type &remote_addr)
@@ -89,6 +111,8 @@ namespace micro
                 m_context_chain.fire_connect(remote_addr);
 
                 m_channel->socket().async_connect(remote_addr, boost::bind(&tcp_connector::on_connect, shared_from_this(), boost::asio::placeholders::error));
+
+                return ERR_SUCCESS;
             }
 
             virtual void on_connect(const boost::system::error_code& error)
@@ -110,18 +134,12 @@ namespace micro
 
                 m_connected = true;
 
+                //handler chain
+                m_context_chain.fire_connected();
+
                 try
                 {
-                    channel_type_id channel_id(CLIENT_TYPE, get_new_channel_id());
-                    m_channel = std::make_shared<tcp_channel>(m_channel_thr_pool->get_ios(), channel_id);
-
-                    //channel option
-
-                    //channel handler initializer
-                    m_channel->channel_inbound_initializer(m_channel_inbound_initializer);
-                    m_channel->channel_outbound_initializer(m_channel_outbound_initializer);
-
-                    m_channel->init();
+                    assert(nullptr != m_channel);
                     m_channel->read();
                 }
                 catch (const boost::exception & e)

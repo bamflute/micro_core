@@ -19,11 +19,13 @@ namespace micro
         {
         public:
 
-            io_handler(uint32_t mask) : m_mask(mask) {}
+            io_handler() : m_mask(0) {}
 
             virtual ~io_handler() = default;
 
             virtual void exception_caught(context_type & ctx, const std::exception & e) { ctx.fire_exception_caught(e); }
+
+            uint32_t mask() { return m_mask; }
 
         protected:
 
@@ -34,7 +36,7 @@ namespace micro
         {
         public:
 
-            tcp_acceptor_handler() : io_handler(MASK_ALL_ACCEPTOR) {}
+            tcp_acceptor_handler() { m_mask |= MASK_ALL_ACCEPTOR; }
 
             virtual void accepted(context_type &ctx) { ctx.fire_accepted(); }
 
@@ -44,7 +46,7 @@ namespace micro
         {
         public:
 
-            tcp_connector_handler() : io_handler(MASK_ALL_CONNECTOR) {}
+            tcp_connector_handler() { m_mask |= MASK_ALL_CONNECTOR; }
 
             virtual void bind(context_type &ctx, const endpoint_type &local_addr) { ctx.fire_bind(local_addr); }
 
@@ -54,11 +56,11 @@ namespace micro
 
         };
 
-        class channel_inbound_handler : public io_handler
+        class channel_inbound_handler : virtual public io_handler
         {
         public:
 
-            channel_inbound_handler() : io_handler(MASK_ALL_INBOUND) {}
+            channel_inbound_handler() { m_mask |= MASK_ALL_INBOUND; }
 
             virtual void channel_active(context_type &ctx) { ctx.fire_channel_active(); }
 
@@ -72,11 +74,11 @@ namespace micro
             
         };
 
-        class channel_outbound_handler : public io_handler
+        class channel_outbound_handler : virtual public io_handler
         {
         public:
 
-            channel_outbound_handler() : io_handler(MASK_ALL_OUTBOUND) {}
+            channel_outbound_handler() { m_mask |= MASK_ALL_OUTBOUND; }
 
             virtual void channel_write(context_type &ctx) { ctx.fire_channel_write(); }
 

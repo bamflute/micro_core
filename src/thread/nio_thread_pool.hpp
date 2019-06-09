@@ -49,6 +49,8 @@ namespace micro
                 {
                     m_ioses.emplace_back(std::make_shared<io_service_helper>());
                 }
+
+                return ERR_SUCCESS;
             }
 
             int32_t start()
@@ -64,6 +66,8 @@ namespace micro
                 {
                     return ERR_FAILED;
                 }
+
+                return ERR_SUCCESS;
             }
 
             int32_t stop()

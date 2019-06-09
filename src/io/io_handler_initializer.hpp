@@ -12,6 +12,8 @@ namespace micro
         {
         public:
 
+            virtual ~io_handler_initializer() = default;
+
             virtual void init(context_chain & chain) = 0;
 
         };

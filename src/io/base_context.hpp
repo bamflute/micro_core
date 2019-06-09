@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include <io/byte_buf.hpp>
-#include <io/socket_address.hpp>
+#include <memory>
+#include <common/any_map.hpp>
 
 
 namespace micro
@@ -15,6 +15,22 @@ namespace micro
         public:
 
             typedef boost::asio::ip::tcp::endpoint endpoint_type;
+
+            boost::any get(std::string var_name)
+            {
+                return m_vars.get(var_name);
+            }
+
+            template<typename T>
+            void set(std::string var_name, T var)
+            {
+                m_vars.set<T>(var_name, var);
+            }
+
+            int count(std::string name)
+            {
+                return m_vars.count(name);
+            }
 
             virtual void fire_exception_caught(const std::exception & e) = 0;
 
@@ -40,6 +56,9 @@ namespace micro
 
             virtual void fire_close() = 0;
 
+        protected:
+
+            any_map m_vars;
         };
 
     }

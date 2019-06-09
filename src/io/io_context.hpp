@@ -24,6 +24,7 @@ namespace micro
                 , m_handler(handler)
                 , m_next(nullptr)
                 , m_prev(nullptr)
+                , m_mask(m_handler ? m_handler->mask() : 0)
             {}
 
             virtual ~io_context() { clear(); }
@@ -31,29 +32,13 @@ namespace micro
             void clear()
             {
                 m_vars.clear();
+                
                 m_next = nullptr;
                 m_prev = nullptr;
                 m_handler = nullptr;
             }                
 
-            template<typename T>
-            T get(std::string var_name)
-            {
-                return m_vars.get<T>(var_name);
-            }
-
-            template<typename T>
-            void set(std::string var_name, T var)
-            {
-                m_vars.set<T>(var_name, var);
-            }
-
-            int count(std::string name)
-            {
-                return m_vars.count(name);
-            }
-
-            handler_ptr_type handler() { return m_handler; }
+            handler_ptr_type handler() { return m_handler; }         
 
             virtual void fire_exception_caught(const std::exception & e)
             {
@@ -302,8 +287,6 @@ namespace micro
         protected:
 
             std::string m_name;
-
-            any_map m_vars;
 
             handler_ptr_type m_handler;
 
