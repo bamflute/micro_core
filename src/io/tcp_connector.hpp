@@ -76,6 +76,18 @@ namespace micro
                 m_connector_initializer->init(m_context_chain);
             }
 
+            void channel_inbound_initializer(initializer_ptr_type channel_inbound_initializer)
+            {
+                assert(nullptr != channel_inbound_initializer);
+                m_channel_inbound_initializer = channel_inbound_initializer;
+            }
+
+            void channel_outound_initializer(initializer_ptr_type channel_outbound_initializer)
+            {
+                assert(nullptr != channel_outbound_initializer);
+                m_channel_outbound_initializer = channel_outbound_initializer;
+            }
+
             void channel_initializer(initializer_ptr_type channel_inbound_initializer, initializer_ptr_type channel_outbound_initializer)
             {
                 assert(nullptr != channel_inbound_initializer && nullptr != channel_outbound_initializer);

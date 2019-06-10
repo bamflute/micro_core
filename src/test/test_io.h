@@ -40,7 +40,7 @@ public:
 
         std::shared_ptr<message> msg = std::make_shared<message>();
         std::shared_ptr<echo_body> msg_body = std::make_shared<echo_body>();
-        msg_body->m_echo = "hello world";
+        msg_body->m_echo = "hello world, I'm client.";
         msg->m_body = msg_body;
 
         ch->write(msg);
@@ -68,7 +68,16 @@ public:
         
         std::shared_ptr<message> msg = std::make_shared<message>();
         std::shared_ptr<echo_body> msg_body = std::make_shared<echo_body>();
-        msg_body->m_echo.assign(buf->get_read_ptr(), buf->get_valid_read_len());
+
+        if (ch->channel_source().m_channel_type == SERVER_TYPE)
+        {
+            msg_body->m_echo = "hello world, I'm server.";
+        }
+        else
+        {
+            msg_body->m_echo = "hello world, I'm client.";
+        }
+        //msg_body->m_echo.assign(buf->get_read_ptr(), buf->get_valid_read_len());
         msg->m_body = msg_body;
 
         std::cout << ">> " << msg_body->m_echo << std::endl;

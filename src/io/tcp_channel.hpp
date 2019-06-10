@@ -111,6 +111,8 @@ namespace micro
 
             std::shared_ptr<message> front_message() { return m_queue.front(); }
 
+            const channel_source & channel_source() const { return m_channel_id; }
+
             //
 
             virtual int32_t init()

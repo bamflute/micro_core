@@ -24,6 +24,7 @@
     <ClInclude Include="..\src\common\common.hpp" />
     <ClInclude Include="..\src\common\error.hpp" />
     <ClInclude Include="..\src\common\any_map.hpp" />
+    <ClInclude Include="..\src\io\bootstrap.hpp" />
     <ClInclude Include="..\src\io\byte_buf.hpp" />
     <ClInclude Include="..\src\io\channel.hpp" />
     <ClInclude Include="..\src\io\context_chain.hpp" />

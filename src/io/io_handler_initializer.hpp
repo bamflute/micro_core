@@ -18,6 +18,14 @@ namespace micro
 
         };
 
+        class default_initializer : public io_handler_initializer
+        {
+        public:
+
+            void init(context_chain & chain) {}
+
+        };
+
     }
 
 }
