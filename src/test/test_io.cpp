@@ -4,10 +4,11 @@
 
 int test_io(int argc, char* argv[])
 {
-    //init group
-    std::shared_ptr<nio_thread_pool> pool = std::make_shared<nio_thread_pool>();
-    pool->init(1);
-    pool->start();
+    //bootstrap group
+    BOOTSTRAP_POOL(pool, 1);
+    //std::shared_ptr<nio_thread_pool> pool = std::make_shared<nio_thread_pool>();
+    //pool->init(1);
+    //pool->start();
 
     //bootstrap acceptor
     BOOTSTRAP_ACCEPTOR(acceptor, "127.0.0.1", 9999, pool, pool, default_initializer, echo_initializer, echo_initializer);

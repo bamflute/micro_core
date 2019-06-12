@@ -8,6 +8,11 @@
 
 #define MAX_THR_POOL_SIZE    128
 
+#define BOOTSTRAP_POOL(POOL, IOS_SIZE) \
+    std::shared_ptr<nio_thread_pool> POOL = std::make_shared<nio_thread_pool>(); \
+    POOL->init(IOS_SIZE); \
+    POOL->start();
+
 namespace micro
 {
     namespace core

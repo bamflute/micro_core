@@ -1,7 +1,7 @@
-#include <test/test_timer.h>
+#include <test/test_io.h>
 
 
 int main(int argc, char* argv[])
 {
-    return test_timer(argc, argv);
+    return test_io(argc, argv);
 }
