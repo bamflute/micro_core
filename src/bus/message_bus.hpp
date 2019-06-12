@@ -6,6 +6,7 @@
 #include <boost/any.hpp>
 #include <boost/serialization/singleton.hpp>
 #include <bus/func_traits.hpp>
+#include <logger/logger.hpp>
 
 
 #define MSG_BUS boost::serialization::singleton<micro::core::message_bus>::get_mutable_instance()
@@ -69,9 +70,9 @@ namespace micro
                 using function_type = std::function<ret_type(args_type...)>;
                 std::string msg_type = topic + "|" + typeid(function_type).name();
 
-                if (topic != "broadcast_timer_tick")
+                if (topic != BROADCAST_TIMER_TICK)
                 {
-                    LOG_DEBUG << "message bus publish: " << msg_type;
+                    //LOG_DEBUG << "message bus publish: " << msg_type;
                 }
 
                 r_lock_guard lock_guard(m_mutex);

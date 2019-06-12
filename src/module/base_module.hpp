@@ -7,10 +7,10 @@
 #pragma once
 
 #include <string>
-#include <boost/program_options.hpp>
 #include <memory>
 #include <timer/base_timer.hpp>
 #include <common/error.hpp>
+#include <common/common.hpp>
 
 
 
@@ -22,8 +22,6 @@ namespace micro
         class base_module
         {
         public:
-
-            typedef boost::program_options::variables_map var_type;
 
             virtual ~base_module() {}
 

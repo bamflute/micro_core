@@ -5,13 +5,16 @@
 #include <thread/nio_thread_pool.hpp>
 #include <timer/timer_common.hpp>
 #include <common/common.hpp>
+#include <timer/timer_functor.hpp>
+
+#define TIMER_GENERATOR boost::serialization::singleton<micro::core::timer_generator>::get_mutable_instance()
 
 namespace micro
 {
     namespace core
     {
 
-        class timer_generator : public base_module, public std::enable_shared_from_this<timer_generator>,  public boost::noncopyable
+        class timer_generator : public base_module
         {
         public:
 
@@ -20,7 +23,7 @@ namespace micro
             typedef boost::asio::steady_timer timer_type;
             typedef std::shared_ptr<timer_type> timer_ptr_type;
 
-            timer_generator() : m_thr_pool(std::make_shared<nio_thread_pool>()), m_timer_tick(0) {}
+            timer_generator() : m_thr_pool(std::make_shared<nio_thread_pool>()), m_timer_tick(0), m_expired_functor(broadcast_tick_notification){}
 
             ~timer_generator() = default;
 
@@ -51,7 +54,7 @@ namespace micro
             int32_t start_timer()
             {
                 m_timer->expires_from_now(std::chrono::milliseconds(DEFAULT_MILLISECONDS_ONE_TICK));
-                m_timer->async_wait(boost::bind(&timer_generator::on_expired, shared_from_this(), boost::asio::placeholders::error));
+                m_timer->async_wait(boost::bind(&timer_generator::on_expired, this, boost::asio::placeholders::error));
                 return ERR_SUCCESS;
             }
 
@@ -64,7 +67,7 @@ namespace micro
 
                 ++m_timer_tick;
 
-                m_expired_functor();
+                m_expired_functor(m_timer_tick);
 
                 start_timer();
             }

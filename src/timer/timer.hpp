@@ -1,6 +1,7 @@
 #pragma once
 
 #include <timer/base_timer.hpp>
+#include <timer/timer_generator.hpp>
 
 namespace micro
 {
@@ -18,7 +19,7 @@ namespace micro
 
             uint64_t get_first_time_out_tick()
             {
-
+                return TIMER_GENERATOR.get_tick() + m_period_as_tick;
             }
 
         protected:

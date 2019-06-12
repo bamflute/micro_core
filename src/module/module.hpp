@@ -18,6 +18,17 @@
 
 
 #define MAX_MSG_COUNT                   100000
+#define MAX_TRIGGER_TIMES               0xFFFFFFFFFFFFFFFF
+
+
+#define INIT_TIMER(TIMER_NAME, PERIOD, REPEAT_TIMES, SESSION_ID, FUNC_PTR) \
+    this->add_timer(TIMER_NAME, PERIOD, REPEAT_TIMES, SESSION_ID); \
+    this->m_timer_invokers[TIMER_NAME] = std::bind(FUNC_PTR, this, std::placeholders::_1);
+
+
+#define INIT_INVOKER(MSG_NAME, FUNC_PTR) \
+    MSG_BUS_SUB(MSG_NAME, [this](std::shared_ptr<message> msg) {return send(msg);}); \
+    m_msg_invokers[MSG_NAME] = std::bind(FUNC_PTR, this, std::placeholders::_1);
 
 
 namespace micro
@@ -150,9 +161,11 @@ namespace micro
 
             virtual int32_t init(var_type &vars)
             {
-                init_invoker();
                 init_timer();
+                init_invoker();
                 init_time_tick_subscription();
+
+                return service_init(vars);
             }
 
             int32_t start()
@@ -185,7 +198,7 @@ namespace micro
             int32_t run()
             {
                 msg_ptr_type msg;
-                queue_type ms_queue;
+                queue_type msg_queue;
 
                 while (!m_exited)
                 {
@@ -196,14 +209,17 @@ namespace micro
                         m_cv.wait_for(lock, ms, [this]()->bool {return !(this->is_empty());});
 
                         if (is_empty()) continue;
-                        m_queue.swap(ms_queue);
+                        m_queue.swap(msg_queue);
                     }
 
-                    while (!m_queue.empty())
+                    while (!msg_queue.empty())
                     {
-                        on_invoke(ms_queue.front());
-                        m_queue.pop();
+                        msg = msg_queue.front();
+                        on_invoke(msg);
+
+                        msg_queue.pop();
                     }
+
                 }
 
                 return ERR_SUCCESS;
@@ -231,7 +247,7 @@ namespace micro
                     return ERR_FAILED;
                 }
 
-                m_queue.emplace(msg);
+                m_queue.push(msg);
 
                 if (!m_queue.empty())
                 {
@@ -291,38 +307,38 @@ namespace micro
                 MSG_BUS_SUB(BROADCAST_TIMER_TICK, [this](std::shared_ptr<message> msg) {return this->send(msg); });
             }
 
-            protected:
+        protected:
 
-                uint64_t add_timer(std::string name, uint64_t period, uint64_t repeat_times, const std::string & session_id)
+            uint64_t add_timer(const std::string & name, uint64_t period, uint64_t repeat_times, const std::string & session_id)
+            {
+                return m_timer_processor->add_timer(name, period, repeat_times, session_id);
+            }
+
+            void remove_timer(uint64_t timer_id) { m_timer_processor->remove_timer(timer_id); }
+
+            int32_t add_session(std::string session_id, std::shared_ptr<session> session)
+            {
+                if (m_sessions.find(session_id) != m_sessions.end())
                 {
-                    return m_timer_processor->add_timer(name, period, repeat_times, session_id);
+                    return ERR_FAILED;
                 }
 
-                void remove_timer(uint64_t timer_id) { m_timer_processor->remove_timer(timer_id); }
+                m_sessions.insert({ session_id, session });
+                return ERR_SUCCESS;
+            }
 
-                int32_t add_session(std::string session_id, std::shared_ptr<session> session)
+            std::shared_ptr<session> get_session(std::string session_id)
+            {
+                auto it = m_sessions.find(session_id);
+                if (it == m_sessions.end())
                 {
-                    if (m_sessions.find(session_id) != m_sessions.end())
-                    {
-                        return ERR_FAILED;
-                    }
-
-                    m_sessions.insert({ session_id, session });
-                    return ERR_SUCCESS;
+                    return nullptr;
                 }
 
-                std::shared_ptr<session> get_session(std::string session_id)
-                {
-                    auto it = m_sessions.find(session_id);
-                    if (it == m_sessions.end())
-                    {
-                        return nullptr;
-                    }
+                return it->second;
+            }
 
-                    return it->second;
-                }
-
-                void remove_session(const std::string & session_id) { m_sessions.erase(session_id); }
+            void remove_session(const std::string & session_id) { m_sessions.erase(session_id); }
 
         protected:
 
