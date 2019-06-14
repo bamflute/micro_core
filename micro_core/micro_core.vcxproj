@@ -44,9 +44,6 @@
     <ClInclude Include="..\src\module\module.hpp" />
     <ClInclude Include="..\src\module\module_func.h" />
     <ClInclude Include="..\src\module\session.hpp" />
-    <ClInclude Include="..\src\test\test_bus.h" />
-    <ClInclude Include="..\src\test\test_io.h" />
-    <ClInclude Include="..\src\test\test_timer.h" />
     <ClInclude Include="..\src\thread\lock.hpp" />
     <ClInclude Include="..\src\thread\nio_thread_pool.hpp" />
     <ClInclude Include="..\src\timer\base_timer.hpp" />
@@ -56,15 +53,18 @@
     <ClInclude Include="..\src\timer\timer_functor.hpp" />
     <ClInclude Include="..\src\timer\timer_generator.hpp" />
     <ClInclude Include="..\src\timer\timer_message.hpp" />
+    <ClInclude Include="..\test\test_bus.h" />
+    <ClInclude Include="..\test\test_io.h" />
+    <ClInclude Include="..\test\test_timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\io\channel_id_allocator.cpp" />
     <ClCompile Include="..\src\module\module_func.cpp" />
-    <ClCompile Include="..\src\test\main.cpp" />
-    <ClCompile Include="..\src\test\test_bus.cpp" />
-    <ClCompile Include="..\src\test\test_io.cpp" />
-    <ClCompile Include="..\src\test\test_timer.cpp" />
     <ClCompile Include="..\src\timer\timer_func.cpp" />
+    <ClCompile Include="..\test\main.cpp" />
+    <ClCompile Include="..\test\test_bus.cpp" />
+    <ClCompile Include="..\test\test_io.cpp" />
+    <ClCompile Include="..\test\test_timer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
