@@ -4,7 +4,7 @@
 #include <io/tcp_connector.hpp>
 #include <io/tcp_acceptor.hpp>
 #include <io/base_context.hpp>
-#include <io/byte_buf.hpp>
+#include <io/io_streambuf.hpp>
 #include <io/channel.hpp>
 #include <io/channel_id_allocator.h>
 #include <io/context_chain.hpp>
@@ -58,7 +58,7 @@ public:
         auto ch = boost::any_cast<std::shared_ptr<tcp_channel>>(ctx.get(std::string(IO_CONTEXT)));
         assert(nullptr != ch);
 
-        std::shared_ptr<byte_buf> buf = ch->recv_buf();
+        std::shared_ptr<io_streambuf> buf = ch->recv_buf();
         assert(nullptr != buf);
 
         if (0 == buf->get_valid_read_len())
@@ -101,7 +101,7 @@ public:
             return ctx.fire_channel_write();
         }
 
-        std::shared_ptr<byte_buf> buf = ch->send_buf();
+        std::shared_ptr<io_streambuf> buf = ch->send_buf();
         assert(nullptr != buf);
 
         buf->write_to_byte_buf(msg_body->m_echo.c_str(), (uint32_t)msg_body->m_echo.size());

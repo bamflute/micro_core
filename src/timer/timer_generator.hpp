@@ -29,7 +29,7 @@ namespace micro
 
             std::string module_name() const { return "timer generator"; }
 
-            int32_t init(var_type &vars)
+            int32_t init(any_map &vars)
             {
                 return m_thr_pool->init(1);
             }

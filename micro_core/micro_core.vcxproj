@@ -25,7 +25,7 @@
     <ClInclude Include="..\src\common\error.hpp" />
     <ClInclude Include="..\src\common\any_map.hpp" />
     <ClInclude Include="..\src\io\bootstrap.hpp" />
-    <ClInclude Include="..\src\io\byte_buf.hpp" />
+    <ClInclude Include="..\src\io\io_streambuf.hpp" />
     <ClInclude Include="..\src\io\channel.hpp" />
     <ClInclude Include="..\src\io\context_chain.hpp" />
     <ClInclude Include="..\src\io\head_context.hpp" />
@@ -118,7 +118,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(BOOST)\;$(SolutionDir)\src;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(BOOST)\;$(SolutionDir)test;$(SolutionDir)src;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <TargetExt>.lib</TargetExt>
     <LibraryPath>$(BOOST)\vc141-x64\lib\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -138,10 +138,20 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions);BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;_WIN32_WINNT=0x0600</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;libboost_log_setup-vc141-mt-gd-x64-1_66.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Lib>
+      <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>$(BOOST)\vc141-x64\lib\</AdditionalLibraryDirectories>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

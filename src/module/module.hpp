@@ -27,7 +27,7 @@
 
 
 #define INIT_INVOKER(MSG_NAME, FUNC_PTR) \
-    MSG_BUS_SUB(MSG_NAME, [this](std::shared_ptr<message> msg) {return send(msg);}); \
+    MSG_BUS_SUB(MSG_NAME, [this](std::shared_ptr<message> &msg) { return send(msg);  }); \
     m_msg_invokers[MSG_NAME] = std::bind(FUNC_PTR, this, std::placeholders::_1);
 
 
@@ -159,7 +159,7 @@ namespace micro
 
             virtual ~module() = default;
 
-            virtual int32_t init(var_type &vars)
+            virtual int32_t init(any_map &vars)
             {
                 init_timer();
                 init_invoker();
@@ -215,9 +215,11 @@ namespace micro
                     while (!msg_queue.empty())
                     {
                         msg = msg_queue.front();
+                        //std::cout << msg.use_count() << std::endl;
                         on_invoke(msg);
 
                         msg_queue.pop();
+                        //std::cout << msg.use_count() << std::endl;
                     }
 
                 }
@@ -247,7 +249,9 @@ namespace micro
                     return ERR_FAILED;
                 }
 
+                //std::cout << msg.use_count() << std::endl;
                 m_queue.push(msg);
+                //std::cout << msg.use_count() << std::endl;
 
                 if (!m_queue.empty())
                 {
@@ -294,7 +298,7 @@ namespace micro
 
         protected:
 
-            virtual int32_t service_init(var_type &options) { return ERR_SUCCESS; }
+            virtual int32_t service_init(any_map &vars) { return ERR_SUCCESS; }
 
             virtual int32_t service_exit() { return ERR_SUCCESS; }
 
@@ -304,7 +308,7 @@ namespace micro
 
             virtual void init_time_tick_subscription()
             {
-                MSG_BUS_SUB(BROADCAST_TIMER_TICK, [this](std::shared_ptr<message> msg) {return this->send(msg); });
+                MSG_BUS_SUB(BROADCAST_TIMER_TICK, [this](std::shared_ptr<message> &msg) {return this->send(msg); });
             }
 
         protected:

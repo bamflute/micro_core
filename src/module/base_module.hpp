@@ -11,6 +11,7 @@
 #include <timer/base_timer.hpp>
 #include <common/error.hpp>
 #include <common/common.hpp>
+#include <common/any_map.hpp>
 
 
 
@@ -27,7 +28,7 @@ namespace micro
 
             virtual std::string name() const { return "base module"; };
 
-            virtual int32_t init(var_type &vars) { return ERR_SUCCESS; }
+            virtual int32_t init(any_map &vars) { return ERR_SUCCESS; }
 
             virtual int32_t exit() { return ERR_SUCCESS; }
 

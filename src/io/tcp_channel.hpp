@@ -8,7 +8,7 @@
 #include <boost/any.hpp>
 #include <boost/exception/all.hpp>
 #include <io/io_handler_initializer.hpp>
-#include <io/byte_buf.hpp>
+#include <io/io_streambuf.hpp>
 #include <io/channel.hpp>
 
 
@@ -30,7 +30,7 @@ namespace micro
             typedef std::mutex mutex_type;
             
             typedef channel_source channel_type_id;
-            typedef std::shared_ptr<byte_buf> buf_ptr_type;
+            typedef std::shared_ptr<io_streambuf> buf_ptr_type;
             
             typedef boost::asio::ip::tcp::socket socket_type;
             typedef boost::asio::ip::tcp::endpoint endpoint_type;
@@ -109,7 +109,7 @@ namespace micro
 
             virtual buf_ptr_type send_buf() { return m_send_buf; }
 
-            std::shared_ptr<message> front_message() { return m_queue.front(); }
+            std::shared_ptr<message> front_message() { std::unique_lock<std::mutex> lock(m_mutex); return m_queue.size() ? m_queue.front() : nullptr; }
 
             const channel_source & channel_source() const { return m_channel_id; }
 
@@ -254,8 +254,8 @@ namespace micro
 
             void init_buf()
             {
-                m_recv_buf = std::make_shared<byte_buf>(m_recv_buf_len);
-                m_send_buf = std::make_shared<byte_buf>(m_send_buf_len);
+                m_recv_buf = std::make_shared<io_streambuf>(m_recv_buf_len);
+                m_send_buf = std::make_shared<io_streambuf>(m_send_buf_len);
             }
 
             void on_read(const boost::system::error_code& error, size_t bytes_transferred)
@@ -402,7 +402,7 @@ namespace micro
                 }
             }
 
-            void do_write(std::shared_ptr<byte_buf> &msg_buf)
+            void do_write(std::shared_ptr<io_streambuf> &msg_buf)
             {
                 if (CHANNEL_STOPPED == m_state)
                 {

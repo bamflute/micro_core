@@ -129,9 +129,6 @@
     <ClInclude Include="..\src\io\io_handler_initializer.hpp">
       <Filter>src\io</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\io\byte_buf.hpp">
-      <Filter>src\io</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\io\bootstrap.hpp">
       <Filter>src\io</Filter>
     </ClInclude>
@@ -143,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="..\test\test_timer.h">
       <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\io_streambuf.hpp">
+      <Filter>src\io</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

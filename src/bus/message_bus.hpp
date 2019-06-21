@@ -7,6 +7,7 @@
 #include <boost/serialization/singleton.hpp>
 #include <bus/func_traits.hpp>
 #include <logger/logger.hpp>
+#include <timer/timer_message.hpp>
 
 
 #define MSG_BUS boost::serialization::singleton<micro::core::message_bus>::get_mutable_instance()
@@ -42,7 +43,6 @@ namespace micro
                 LOG_DEBUG << "message bus subscribe: " << msg_type;
 
                 w_lock_guard lock_guard(m_mutex);
-                //m_msg_invokers.emplace(std::move(msg_type), std::forward<function_type>(func));
                 m_msg_invokers.emplace(std::move(msg_type), std::move(func));
             }
 
@@ -65,7 +65,7 @@ namespace micro
 
             //publish topic to bus with args function
             template<typename ret_type, typename... args_type>
-            void publish(const std::string &topic, args_type&... args)
+            void publish(const std::string &topic, args_type&&... args)
             {
                 using function_type = std::function<ret_type(args_type...)>;
                 std::string msg_type = topic + "|" + typeid(function_type).name();
