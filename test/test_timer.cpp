@@ -29,7 +29,8 @@ public:
 
     void init_timer()
     {
-        INIT_TIMER("test_timer", 1000, MAX_TRIGGER_TIMES, "", &timer_module::on_timer_hello_world);
+        uint64_t timer_id = INVALID_TIMER_ID;
+        INIT_TIMER(timer_id, "test_timer", 1000, MAX_TRIGGER_TIMES, "", &timer_module::on_timer_hello_world);
     }
 
     int32_t on_timer_hello_world(timer_ptr_type timer)

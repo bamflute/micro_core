@@ -22,6 +22,8 @@ namespace micro
                 return TIMER_GENERATOR.get_tick() + m_period_as_tick;
             }
 
+            const std::string & get_info() const { return m_info; }
+
         protected:
 
             std::string m_info;

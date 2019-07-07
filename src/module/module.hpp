@@ -21,8 +21,8 @@
 #define MAX_TRIGGER_TIMES               0xFFFFFFFFFFFFFFFF
 
 
-#define INIT_TIMER(TIMER_NAME, PERIOD, REPEAT_TIMES, SESSION_ID, FUNC_PTR) \
-    this->add_timer(TIMER_NAME, PERIOD, REPEAT_TIMES, SESSION_ID); \
+#define INIT_TIMER(TIMER_ID, TIMER_NAME, PERIOD, REPEAT_TIMES, SESSION_ID, FUNC_PTR) \
+    TIMER_ID = this->add_timer(TIMER_NAME, PERIOD, REPEAT_TIMES, SESSION_ID); \
     this->m_timer_invokers[TIMER_NAME] = std::bind(FUNC_PTR, this, std::placeholders::_1);
 
 

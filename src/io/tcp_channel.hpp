@@ -6,6 +6,7 @@
 #include <message/message.hpp>
 #include <boost/asio.hpp>
 #include <boost/any.hpp>
+#include <boost/bind.hpp>
 #include <boost/exception/all.hpp>
 #include <io/io_handler_initializer.hpp>
 #include <io/io_streambuf.hpp>
