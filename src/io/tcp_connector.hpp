@@ -44,6 +44,8 @@ namespace micro
 
             channel_ptr_type channel() { return m_channel; }
 
+            const channel_source & channel_source() { return this->channel()->channel_source(); }
+
 
             template<typename T>
             void connector_option(std::string name, T value)
@@ -114,15 +116,21 @@ namespace micro
 
             virtual int32_t connect(const endpoint_type &remote_addr)
             {
+                this->m_remote_addr = remote_addr;
+                return connect();
+            }
+
+            virtual int32_t connect()
+            {
                 if (nullptr == m_connector_thr_pool || nullptr == m_channel_thr_pool)
                 {
                     return ERR_FAILED;
                 }
 
                 //handler chain
-                m_context_chain.fire_connect(remote_addr);
+                m_context_chain.fire_connect(m_remote_addr);
 
-                m_channel->socket().async_connect(remote_addr, boost::bind(&tcp_connector::on_connect, shared_from_this(), boost::asio::placeholders::error));
+                m_channel->socket().async_connect(m_remote_addr, boost::bind(&tcp_connector::on_connect, shared_from_this(), boost::asio::placeholders::error));
 
                 return ERR_SUCCESS;
             }
@@ -164,10 +172,10 @@ namespace micro
 
             virtual int32_t close()
             {
-                if (true == m_connected)        //has connected and could not be stopped
-                {
-                    return ERR_SUCCESS;
-                }
+                //if (true == m_connected)        //has connected and could not be stopped
+                //{
+                //    return ERR_SUCCESS;
+                //}
 
                 boost::system::error_code error;
 
@@ -207,6 +215,8 @@ namespace micro
             initializer_ptr_type m_channel_outbound_initializer;
 
             initializer_ptr_type m_connector_initializer;
+
+            endpoint_type m_remote_addr;
             
         };
 
