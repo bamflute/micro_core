@@ -42,7 +42,7 @@ namespace micro
 
 
             tcp_channel(ios_ptr_type ios, channel_type_id channel_id)
-                : m_state(CHANNEL_ACTIVE)
+                : m_state(CHANNEL_INACTIVE)
                 , m_channel_id(channel_id)
                 , m_str_channel_id(m_channel_id.to_string())
                 , m_ios(ios)
@@ -114,6 +114,10 @@ namespace micro
 
             const channel_source & channel_source() const { return m_channel_id; }
 
+            void set_state(channel_state state) {m_state = state;}
+
+            channel_state get_state() const { return m_state; }
+
             //
 
             virtual int32_t init()
@@ -128,7 +132,7 @@ namespace micro
 
             virtual int32_t exit()
             {
-                m_state = CHANNEL_STOPPED;
+                m_state = CHANNEL_INACTIVE;
                 LOG_DEBUG << "tcp channel stop: " << m_str_channel_id;
 
                 boost::system::error_code error;
@@ -150,7 +154,7 @@ namespace micro
 
             virtual int32_t read()
             {
-                if (CHANNEL_STOPPED == m_state)
+                if (CHANNEL_INACTIVE == m_state)
                 {
                     return ERR_FAILED;
                 }
@@ -180,7 +184,7 @@ namespace micro
 
             virtual int32_t write(std::shared_ptr<message> msg)
             {
-                if (CHANNEL_STOPPED == m_state)
+                if (CHANNEL_INACTIVE == m_state)
                 {
                     return ERR_FAILED;
                 }
@@ -217,7 +221,7 @@ namespace micro
                     //handler chain
                     m_outbound_chain.fire_channel_write();
 
-                    if (CHANNEL_STOPPED == m_state)    //for safety and efficiency
+                    if (CHANNEL_INACTIVE == m_state)    //for safety and efficiency
                     {
                         LOG_DEBUG << "tcp channel has been stopped: " << m_str_channel_id;
                         return ERR_SUCCESS;
@@ -261,7 +265,7 @@ namespace micro
 
             void on_read(const boost::system::error_code& error, size_t bytes_transferred)
             {
-                if (CHANNEL_STOPPED == m_state)
+                if (CHANNEL_INACTIVE == m_state)
                 {
                     LOG_DEBUG << "tcp channel has been stopped and on read exit directly: " << m_str_channel_id;
                     return;
@@ -269,15 +273,17 @@ namespace micro
 
                 if (error)
                 {
-                    if (boost::asio::error::operation_aborted == error.value())
-                    {
-                        return;
-                    }
-
                     if (TCP_CHANNEL_TRANSFER_TIMEOUT == error.value())
                     {
                         read();
-                        
+
+                        return;
+                    }
+
+                    m_state = CHANNEL_INACTIVE;
+
+                    if (boost::asio::error::operation_aborted == error.value())
+                    {
                         return;
                     }
 
@@ -324,13 +330,15 @@ namespace micro
 
             void on_write(const boost::system::error_code& error, size_t bytes_transferred)
             {
-                if (CHANNEL_STOPPED == m_state)
+                if (CHANNEL_INACTIVE == m_state)
                 {
                     return;
                 }
 
                 if (error)
                 {
+                    m_state = CHANNEL_INACTIVE;
+
                     //aborted, maybe cancel triggered
                     if (boost::asio::error::operation_aborted == error.value())
                     {
@@ -405,7 +413,7 @@ namespace micro
 
             void do_write(std::shared_ptr<io_streambuf> &msg_buf)
             {
-                if (CHANNEL_STOPPED == m_state)
+                if (CHANNEL_INACTIVE == m_state)
                 {
                     return;
                 }

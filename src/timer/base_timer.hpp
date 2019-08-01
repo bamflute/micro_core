@@ -24,7 +24,6 @@ namespace micro
                 , m_timer_id(0)
             {
                 m_period_as_tick = std::lround(m_period * 1.0 / DEFAULT_MILLISECONDS_ONE_TICK);
-                m_time_out_tick = get_first_time_out_tick();
             }
 
             virtual ~base_timer() {}

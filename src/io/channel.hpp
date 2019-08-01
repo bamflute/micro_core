@@ -13,7 +13,7 @@ namespace micro
         enum channel_state
         {
             CHANNEL_ACTIVE,
-            CHANNEL_STOPPED
+            CHANNEL_INACTIVE
         };
 
         class channel

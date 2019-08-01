@@ -139,6 +139,8 @@ namespace micro
             {
                 if (error)
                 {
+                    m_connected = false;
+
                     if (boost::asio::error::operation_aborted == error.value())
                     {
                         LOG_DEBUG << "tcp_connector connect aborted.";
@@ -153,6 +155,7 @@ namespace micro
                 }
 
                 m_connected = true;
+                m_channel->set_state(CHANNEL_ACTIVE);
 
                 //handler chain
                 m_context_chain.fire_connected();
