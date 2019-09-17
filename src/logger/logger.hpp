@@ -13,6 +13,13 @@
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/attributes/mutable_constant.hpp>
 #include <boost/exception/diagnostic_information.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/log/utility/setup/console.hpp>
+
+
+
+namespace bf = boost::filesystem;
+
 
 
 #define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)
@@ -52,7 +59,7 @@ namespace micro
         {
         public:
 
-            static int32_t init()
+            static int32_t init(bf::path log_path)
             {
                 boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
 
@@ -61,8 +68,8 @@ namespace micro
                     auto sink = boost::log::add_file_log
                     (
                         //attribute
-                        //boost::log::keywords::file_name = (matrix::core::path_util::get_exe_dir() /= "logs/%Y%m%d%H%M%S_%N.log").c_str(),
-                        //boost::log::keywords::target = (matrix::core::path_util::get_exe_dir() /= "logs"),
+                        boost::log::keywords::target = (log_path / "logs"),                        
+                        boost::log::keywords::file_name = (log_path / "logs/%Y%m%d%H%M%S_%N.log").c_str(),
                         boost::log::keywords::max_files = 10,
                         boost::log::keywords::rotation_size = 100 * 1024 * 1024,
                         boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
@@ -74,6 +81,14 @@ namespace micro
                             << "|" << boost::log::expressions::smessage
                             )
                     );
+
+                    boost::log::add_console_log(std::cout, boost::log::keywords::format =  (
+                            boost::log::expressions::stream
+                            << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%m-%d %H:%M:%S.%f")
+                            << "|" << boost::log::expressions::attr< boost::log::attributes::current_thread_id::value_type>("ThreadID")
+                            << "|" << std::setw(7) << std::setfill(' ') << std::left << boost::log::trivial::severity
+                            << "|" << boost::log::expressions::smessage
+                            ));
 
                     boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
                     sink->locked_backend()->auto_flush(true);

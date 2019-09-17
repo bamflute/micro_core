@@ -143,9 +143,11 @@ namespace micro
 
                     if (boost::asio::error::operation_aborted == error.value())
                     {
-                        LOG_DEBUG << "tcp_connector connect aborted.";
+                        LOG_ERROR << "tcp_connector connect aborted " << m_channel->channel_source().to_string();
                         return;
                     }
+
+                    LOG_ERROR << "tcp_connector connect error: " << error.value() << m_channel->channel_source().to_string();
 
                     //handler chain
                     std::runtime_error e("tcp connector error: " + error.value());
@@ -179,6 +181,8 @@ namespace micro
                 //{
                 //    return ERR_SUCCESS;
                 //}
+
+                LOG_DEBUG << "tcp connector close: " << m_channel->channel_source().to_string();
 
                 boost::system::error_code error;
 

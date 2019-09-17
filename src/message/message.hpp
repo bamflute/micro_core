@@ -29,7 +29,7 @@ namespace micro
 
             channel_source(channel_type type, uint64_t id) : m_channel_type(type), m_channel_id(id) {}
 
-            std::string to_string() 
+            std::string to_string() const
             {
                 std::stringstream stream;
                 stream << " channel source: " << m_channel_type << "-" << m_channel_id;

@@ -133,7 +133,7 @@ namespace micro
             virtual int32_t exit()
             {
                 m_state = CHANNEL_INACTIVE;
-                LOG_DEBUG << "tcp channel stop: " << m_str_channel_id;
+                LOG_DEBUG << "tcp channel exit: " << m_str_channel_id;
 
                 boost::system::error_code error;
 
@@ -186,6 +186,7 @@ namespace micro
             {
                 if (CHANNEL_INACTIVE == m_state)
                 {
+                    LOG_ERROR << "tcp channel write error: channel INACTIVE, channel id: " << this->m_channel_id.to_string();
                     return ERR_FAILED;
                 }
 
@@ -196,7 +197,7 @@ namespace micro
 
                         if (m_queue.size() >= MAX_QUEUE_SIZE)
                         {
-                            LOG_ERROR << "tcp channel send queue is full: " << m_str_channel_id;
+                            LOG_ERROR << "tcp channel send queue is full: " << msg->get_name() << " " << m_str_channel_id;
                             return ERR_FAILED;
                         }
                     
@@ -214,7 +215,7 @@ namespace micro
                         m_send_buf->reset();
                     }
 
-                    //LOG_DEBUG << "tcp channel: " << m_str_channel_id << " send buf: " << m_send_buf->to_string();
+                    //LOG_DEBUG << m_str_channel_id << " send buf: " << m_send_buf->to_string();
 
                     assert(nullptr != shared_from_this());
 
@@ -223,8 +224,8 @@ namespace micro
 
                     if (CHANNEL_INACTIVE == m_state)    //for safety and efficiency
                     {
-                        LOG_DEBUG << "tcp channel has been stopped: " << m_str_channel_id;
-                        return ERR_SUCCESS;
+                        LOG_ERROR << "tcp channel is INACTIVE " << m_str_channel_id;
+                        return ERR_FAILED;
                     }
                     
                     m_socket.async_write_some(boost::asio::buffer(m_send_buf->get_read_ptr(), m_send_buf->get_valid_read_len()),
@@ -267,7 +268,7 @@ namespace micro
             {
                 if (CHANNEL_INACTIVE == m_state)
                 {
-                    LOG_DEBUG << "tcp channel has been stopped and on read exit directly: " << m_str_channel_id;
+                    LOG_ERROR << "tcp channel is INACTIVE on read and exit directly" << m_str_channel_id;
                     return;
                 }
 
@@ -284,6 +285,7 @@ namespace micro
 
                     if (boost::asio::error::operation_aborted == error.value())
                     {
+                        LOG_ERROR << "tcp channel on read aborted: " << error.value() << " " << error.message() << m_str_channel_id;
                         return;
                     }
 
@@ -342,11 +344,11 @@ namespace micro
                     //aborted, maybe cancel triggered
                     if (boost::asio::error::operation_aborted == error.value())
                     {
-                        LOG_DEBUG << "tcp channel on write aborted: " << error.value() << " " << error.message() << m_str_channel_id;
+                        LOG_ERROR << "tcp channel on write aborted: " << error.value() << " " << error.message() << m_str_channel_id;
                         return;
                     }
 
-                    LOG_DEBUG << "tcp channel on write aborted: " << error.value() << " " << error.message() << m_str_channel_id;
+                    LOG_ERROR << "tcp channel on write aborted: " << error.value() << " " << error.message() << m_str_channel_id;
 
                     std::runtime_error e("tcp connector on write error: " + error.message());
                     m_outbound_chain.fire_exception_caught(e);
@@ -385,7 +387,6 @@ namespace micro
                             //handler chain
                             m_outbound_chain.fire_channel_write();
 
-                            LOG_DEBUG << "tcp channel " << m_str_channel_id << " send buf: " << m_send_buf->to_string();
                             do_write(m_send_buf);
                         }
                     }
