@@ -140,14 +140,15 @@ namespace micro
                 if (error)
                 {
                     m_connected = false;
+                    m_channel->set_state(CHANNEL_INACTIVE);
 
                     if (boost::asio::error::operation_aborted == error.value())
                     {
-                        LOG_ERROR << "tcp_connector connect aborted " << m_channel->channel_source().to_string();
+                        LOG_ERROR << "tcp_connector connect aborted " << m_channel->channel_source().to_string() << m_channel->addr_info();
                         return;
                     }
 
-                    LOG_ERROR << "tcp_connector connect error: " << error.value() << m_channel->channel_source().to_string();
+                    LOG_ERROR << "tcp_connector connect error: " << error.value() << m_channel->channel_source().to_string() << m_channel->addr_info();
 
                     //handler chain
                     std::runtime_error e("tcp connector error: " + error.value());
@@ -157,7 +158,9 @@ namespace micro
                 }
 
                 m_connected = true;
+
                 m_channel->set_state(CHANNEL_ACTIVE);
+                m_channel->init_addr_info();
 
                 //handler chain
                 m_context_chain.fire_connected();
@@ -177,26 +180,7 @@ namespace micro
 
             virtual int32_t close()
             {
-                //if (true == m_connected)        //has connected and could not be stopped
-                //{
-                //    return ERR_SUCCESS;
-                //}
-
-                LOG_DEBUG << "tcp connector close: " << m_channel->channel_source().to_string();
-
-                boost::system::error_code error;
-
-                m_channel->socket().cancel(error);
-                if (error)
-                {
-                    LOG_ERROR << "tcp connector cancel error: " << error;
-                }
-
-                m_channel->socket().close(error);
-                if (error)
-                {
-                    LOG_ERROR << "tcp connector close error: " << error;
-                }
+                m_channel->close();
 
                 return ERR_SUCCESS;
             }

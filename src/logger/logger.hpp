@@ -48,6 +48,7 @@ namespace micro
             {
                 std::cout << "std::runtime_error: " << e.what() << std::endl;
             }
+
             void operator() (std::logic_error const& e) const
             {
                 std::cout << "std::logic_error: " << e.what() << std::endl;
@@ -68,7 +69,7 @@ namespace micro
                     auto sink = boost::log::add_file_log
                     (
                         //attribute
-                        boost::log::keywords::target = (log_path / "logs"),                        
+                        boost::log::keywords::target = (log_path / "logs"),
                         boost::log::keywords::file_name = (log_path / "logs/%Y%m%d%H%M%S_%N.log").c_str(),
                         boost::log::keywords::max_files = 10,
                         boost::log::keywords::rotation_size = 100 * 1024 * 1024,
@@ -99,7 +100,6 @@ namespace micro
 
                     boost::log::add_common_attributes();
                 }
-
                 catch (const std::exception & e)
                 {
                     std::cout << "log error" << e.what() << std::endl;
@@ -119,7 +119,6 @@ namespace micro
                 boost::log::core::get()->set_exception_handler(
                     boost::log::make_exception_handler<std::runtime_error, std::logic_error>(log_exception_handler())
                 );
-                //BOOST_LOG_TRIVIAL(info) << "init core log success.";
 
                 return 0;
             }
