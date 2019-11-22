@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <cassert>
+#include <thread>
 #include <message/message.hpp>
 #include <boost/asio.hpp>
 #include <boost/any.hpp>
@@ -111,7 +112,11 @@ namespace micro
 
             virtual buf_ptr_type send_buf() { return m_send_buf; }
 
-            std::shared_ptr<message> front_message() { std::unique_lock<std::mutex> lock(m_mutex); return m_queue.size() ? m_queue.front() : nullptr; }
+            std::shared_ptr<message> front_message() 
+            { 
+                //std::unique_lock<std::mutex> lock(m_mutex); 
+                return m_queue.size() ? m_queue.front() : nullptr; 
+            }
 
             const channel_source & channel_source() const { return m_channel_id; }
 
@@ -126,8 +131,6 @@ namespace micro
                 m_addr_info = " local: " + m_socket.local_endpoint().address().to_string() + " " + std::to_string(m_socket.local_endpoint().port()) + " "
                                         + "remote: " + m_socket.remote_endpoint().address().to_string() + " " + std::to_string(m_socket.remote_endpoint().port());
             }
-
-            //
 
             virtual int32_t init()
             {
@@ -258,13 +261,13 @@ namespace micro
                 }
                 catch (const std::exception &e)
                 {
-                    LOG_ERROR << "tcp channel write exception: " << e.what() << m_str_channel_id << addr_info();
+                    LOG_ERROR << "tcp channel write std exception: " << e.what() << m_str_channel_id << addr_info();
                     m_outbound_chain.fire_exception_caught(e);
                 }
                 catch (const boost::exception & e)
                 {
-                    std::runtime_error err("tcp channel write error: " + m_str_channel_id + boost::diagnostic_information(e));
-                    LOG_ERROR << "tcp channel write exception: " << err.what() << m_str_channel_id << addr_info();
+                    std::runtime_error err("tcp channel write boost exception: " + m_str_channel_id + boost::diagnostic_information(e));
+                    LOG_ERROR << "tcp channel write boost exception: " << boost::diagnostic_information(e) << m_str_channel_id << addr_info();
 
                     m_outbound_chain.fire_exception_caught(err);
                 }
@@ -272,7 +275,7 @@ namespace micro
                 {
                     LOG_ERROR << "tcp channel write exception" << m_str_channel_id << addr_info();
 
-                    std::runtime_error e("tcp channel write error: " + m_str_channel_id);
+                    std::runtime_error e("tcp channel write exception: " + m_str_channel_id);
                     m_outbound_chain.fire_exception_caught(e);
                 }
 
@@ -319,6 +322,8 @@ namespace micro
                         return;
                     }
 
+                    LOG_ERROR << "tcp channel on read error: " << error.value() << " " << error.message() << m_str_channel_id << addr_info();
+
                     //handler chain
                     m_inbound_chain.fire_exception_caught(std::runtime_error("tcp channel on read error"));
                     return;
@@ -348,20 +353,20 @@ namespace micro
                 }
                 catch (const std::exception & e)
                 {
-                    LOG_ERROR << "tcp channel on read exception: " << e.what() << m_str_channel_id << addr_info();
+                    LOG_ERROR << "tcp channel on read std exception: " << e.what() << m_str_channel_id << addr_info();
                     m_inbound_chain.fire_exception_caught(e);
                 }
                 catch (const boost::exception & e)
                 {
-                    std::runtime_error err("tcp channel on read error: " + m_str_channel_id + boost::diagnostic_information(e));
-                    LOG_ERROR << "tcp channel on read exception" << err.what() << m_str_channel_id << addr_info();
+                    std::runtime_error err("tcp channel on read boost exception: " + m_str_channel_id + boost::diagnostic_information(e));
+                    LOG_ERROR << "tcp channel on read boost exception" << err.what() << m_str_channel_id << addr_info();
 
                     m_inbound_chain.fire_exception_caught(err);
                 }
                 catch (...)
                 {
                     LOG_ERROR << "tcp channel on read exception" << m_str_channel_id << addr_info();
-                    std::runtime_error e("tcp channel on read error: " + m_str_channel_id);
+                    std::runtime_error e("tcp channel on read exception: " + m_str_channel_id);
 
                     m_inbound_chain.fire_exception_caught(e);
                 }
@@ -430,28 +435,29 @@ namespace micro
                     }
                     else
                     {
-                        std::runtime_error e("tcp connector on write error: bytes_transferred larger than valid len");
+                        std::runtime_error e("tcp channel on write error: bytes_transferred larger than valid len");
+                        LOG_ERROR << "tcp channel on write error: bytes_transferred larger than valid len" << m_str_channel_id << addr_info();
                         m_outbound_chain.fire_exception_caught(e);
                     }
                 }
                 catch (const std::exception & e)
                 {
-                    LOG_ERROR << "tcp channel on write exception: " << e.what() << m_str_channel_id << addr_info();
+                    LOG_ERROR << "tcp channel on write std exception: " << e.what() << m_str_channel_id << addr_info();
                     m_outbound_chain.fire_exception_caught(e);
                 }
                 catch (const boost::exception & e)
                 {
-                    std::runtime_error err("tcp channel on write error: " + m_str_channel_id + boost::diagnostic_information(e));
-                    LOG_ERROR << "tcp channel on write exception: " << err.what() << m_str_channel_id << addr_info();
+                    std::runtime_error err("tcp channel on write boost exception: " + m_str_channel_id + boost::diagnostic_information(e));
+                    LOG_ERROR << "tcp channel on write boost exception: " << boost::diagnostic_information(e) << m_str_channel_id << addr_info();
 
-                    m_inbound_chain.fire_exception_caught(err);
+                    m_outbound_chain.fire_exception_caught(err);
                 }
                 catch (...)
                 {
                     LOG_ERROR << "tcp channel on write exception" << m_str_channel_id << addr_info();
 
-                    std::runtime_error e("tcp channel on read error: " + m_str_channel_id);
-                    m_inbound_chain.fire_exception_caught(e);
+                    std::runtime_error e("tcp channel on write exception: " + m_str_channel_id);
+                    m_outbound_chain.fire_exception_caught(e);
                 }
             }
 
