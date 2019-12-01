@@ -144,6 +144,12 @@
     <ClInclude Include="..\src\io\io_streambuf.hpp">
       <Filter>src\io</Filter>
     </ClInclude>
+    <ClInclude Include="..\test\test_udp.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\udp_channel.hpp">
+      <Filter>src\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\module\module_func.cpp">
@@ -158,13 +164,16 @@
     <ClCompile Include="..\test\main.cpp">
       <Filter>test</Filter>
     </ClCompile>
-    <ClCompile Include="..\test\test_bus.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
     <ClCompile Include="..\test\test_io.cpp">
       <Filter>test</Filter>
     </ClCompile>
     <ClCompile Include="..\test\test_timer.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test\test_udp.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test\test_bus.cpp">
       <Filter>test</Filter>
     </ClCompile>
   </ItemGroup>

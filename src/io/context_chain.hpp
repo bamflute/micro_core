@@ -8,6 +8,7 @@
 
 
 #define IO_CONTEXT    "io_context"
+#define REMOTE_ENDPOINT "remote_endpoint"
 
 
 namespace micro

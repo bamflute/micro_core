@@ -1,7 +1,7 @@
-#include <test_io.h>
+#include <test_udp.h>
 
 
 int main(int argc, char* argv[])
 {
-    return test_io(argc, argv);
+    return test_udp(argc, argv);
 }

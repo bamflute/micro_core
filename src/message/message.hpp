@@ -4,7 +4,7 @@
 #include <string>
 #include <memory>
 #include <common/common.hpp>
-
+#include <boost/asio.hpp>
 
 
 
@@ -12,6 +12,12 @@ namespace micro
 {
     namespace core
     {
+
+        enum proto_type
+        {
+            TCP_TYPE = 0,
+            UDP_TYPE = 1
+        };
 
         enum channel_type
         {
@@ -25,7 +31,7 @@ namespace micro
         {
         public:
 
-            channel_source() : m_channel_type(INNER_TYPE), m_channel_id(0) {}
+            channel_source() : m_channel_type(INNER_TYPE), m_channel_id(0), m_proto_type(TCP_TYPE) {}
 
             channel_source(channel_type type, uint64_t id) : m_channel_type(type), m_channel_id(id) {}
 
@@ -36,8 +42,12 @@ namespace micro
                 return  stream.str();
             }
 
+            proto_type m_proto_type;
+
             uint64_t m_channel_id;
             uint32_t m_channel_type;
+
+            boost::asio::ip::udp::endpoint m_endpoint;
         };
 
         class base_header
@@ -75,6 +85,8 @@ namespace micro
 
             virtual uint32_t get_priority() const { return m_header->m_priority; }
             virtual void set_priority(uint32_t priority) { m_header->m_priority = priority; }
+
+            virtual boost::asio::ip::udp::endpoint get_dst_endpoint() {return m_header->m_dst.m_endpoint; }
 
             header_ptr_type m_header;
             body_ptr_type     m_body;

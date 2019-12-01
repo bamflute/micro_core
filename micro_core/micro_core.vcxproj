@@ -38,6 +38,7 @@
     <ClInclude Include="..\src\io\tcp_acceptor.hpp" />
     <ClInclude Include="..\src\io\tcp_channel.hpp" />
     <ClInclude Include="..\src\io\tcp_connector.hpp" />
+    <ClInclude Include="..\src\io\udp_channel.hpp" />
     <ClInclude Include="..\src\logger\logger.hpp" />
     <ClInclude Include="..\src\message\message.hpp" />
     <ClInclude Include="..\src\module\base_module.hpp" />
@@ -56,6 +57,7 @@
     <ClInclude Include="..\test\test_bus.h" />
     <ClInclude Include="..\test\test_io.h" />
     <ClInclude Include="..\test\test_timer.h" />
+    <ClInclude Include="..\test\test_udp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\io\channel_id_allocator.cpp" />
@@ -65,6 +67,7 @@
     <ClCompile Include="..\test\test_bus.cpp" />
     <ClCompile Include="..\test\test_io.cpp" />
     <ClCompile Include="..\test\test_timer.cpp" />
+    <ClCompile Include="..\test\test_udp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
