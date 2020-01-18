@@ -15,9 +15,10 @@
 #include <timer/timer_func.h>
 #include <module/module_func.h>
 #include <bus/message_bus.hpp>
+#include <module/multi_priority_queue.hpp>
 
 
-#define MAX_MSG_COUNT                   100000
+#define MAX_MSG_COUNT                   500000
 #define MAX_TRIGGER_TIMES               0xFFFFFFFFFFFFFFFF
 
 
@@ -138,7 +139,7 @@ namespace micro
             typedef std::shared_ptr<std::thread> thr_ptr_type;
             typedef std::shared_ptr<message> msg_ptr_type;
             typedef std::shared_ptr<timer> timer_ptr_type;
-            typedef std::queue<std::shared_ptr<message>> queue_type;
+            typedef std::shared_ptr<multi_priority_queue<msg_ptr_type>> queue_type;
 
             typedef std::function<int32_t(msg_ptr_type)> msg_functor_type;
             typedef std::function<int32_t(timer_ptr_type)> timer_functor_type;
@@ -155,6 +156,8 @@ namespace micro
                 : m_exited(false)
                 , m_functor(task_func)
                 , m_timer_processor(std::make_shared<timer_processor>(this))
+                , m_send_queue(std::make_shared<multi_priority_queue<msg_ptr_type>>())
+                , m_worker_queue(std::make_shared<multi_priority_queue<msg_ptr_type>>())
             {}
 
             virtual ~module() = default;
@@ -198,7 +201,6 @@ namespace micro
             int32_t run()
             {
                 msg_ptr_type msg;
-                queue_type msg_queue;
 
                 while (!m_exited)
                 {
@@ -209,17 +211,19 @@ namespace micro
                         m_cv.wait_for(lock, ms, [this]()->bool {return !(this->is_empty());});
 
                         if (is_empty()) continue;
-                        m_queue.swap(msg_queue);
+
+                        //swap queue
+                        auto tmp_queue = m_send_queue;
+                        assert(m_worker_queue->empty());
+                        m_send_queue = m_worker_queue;
+                        m_worker_queue = tmp_queue;
                     }
 
-                    while (!msg_queue.empty())
+                    while (!m_worker_queue->empty())
                     {
-                        msg = msg_queue.front();
-                        //std::cout << msg.use_count() << std::endl;
+                        msg = m_worker_queue->front();
                         on_invoke(msg);
-
-                        msg_queue.pop();
-                        //std::cout << msg.use_count() << std::endl;
+                        m_worker_queue->pop();
                     }
 
                 }
@@ -243,17 +247,15 @@ namespace micro
             {
                 std::unique_lock<std::mutex> lock(m_mutex);
 
-                if (m_queue.size() >= MAX_MSG_COUNT)
+                if (m_send_queue->size() >= MAX_MSG_COUNT)
                 {
-                    LOG_ERROR << "service module message queue full";
+                    LOG_ERROR << "module message queue full: " << this->name();
                     return ERR_FAILED;
                 }
 
-                //std::cout << msg.use_count() << std::endl;
-                m_queue.push(msg);
-                //std::cout << msg.use_count() << std::endl;
+                m_send_queue->push(msg, msg->m_header->m_priority);
 
-                if (!m_queue.empty())
+                if (!m_send_queue->empty())
                 {
                     m_cv.notify_all();
                 }
@@ -261,7 +263,7 @@ namespace micro
                 return ERR_SUCCESS;
             }
 
-            bool is_empty() const { return m_queue.empty(); }
+            bool is_empty() const { return m_send_queue->empty(); }
 
         protected:
 
@@ -354,7 +356,9 @@ namespace micro
 
             thr_ptr_type m_thr;
 
-            queue_type m_queue;
+            queue_type m_send_queue;
+
+            queue_type m_worker_queue;
 
             functor_type m_functor;
 

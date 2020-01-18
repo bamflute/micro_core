@@ -7,6 +7,10 @@
 #include <boost/asio.hpp>
 
 
+#define HIGH_PRIORITY                              0
+#define MIDDLE_PRIORITY                        1
+#define LOW_PRIORITY                               2
+
 
 namespace micro
 {
@@ -56,7 +60,7 @@ namespace micro
 
             typedef channel_source channel_type;
 
-            base_header() : m_name(""), m_priority(0) {}
+            base_header() : m_name(""), m_priority(LOW_PRIORITY) {}
 
             std::string m_name;
             uint32_t    m_priority;

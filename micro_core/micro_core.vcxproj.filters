@@ -31,6 +31,15 @@
     <Filter Include="test">
       <UniqueIdentifier>{c9dbf4de-b54e-4974-98f4-d0d6b1bd91f4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\io\http">
+      <UniqueIdentifier>{af83db96-079d-4765-b78a-a05392fc7a10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\io\udp">
+      <UniqueIdentifier>{5c4df775-b412-4a38-9304-84deb6cfb02f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\io\tcp">
+      <UniqueIdentifier>{5d0e6270-b5ee-4f34-bc2c-00355d5227ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\timer\base_timer.hpp">
@@ -90,12 +99,6 @@
     <ClInclude Include="..\src\io\channel.hpp">
       <Filter>src\io</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\io\tcp_channel.hpp">
-      <Filter>src\io</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\io\tcp_connector.hpp">
-      <Filter>src\io</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\common\common.hpp">
       <Filter>src\common</Filter>
     </ClInclude>
@@ -123,23 +126,11 @@
     <ClInclude Include="..\src\io\mask.hpp">
       <Filter>src\io</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\io\tcp_acceptor.hpp">
-      <Filter>src\io</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\io\io_handler_initializer.hpp">
       <Filter>src\io</Filter>
     </ClInclude>
     <ClInclude Include="..\src\io\bootstrap.hpp">
       <Filter>src\io</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_bus.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_io.h">
-      <Filter>test</Filter>
-    </ClInclude>
-    <ClInclude Include="..\test\test_timer.h">
-      <Filter>test</Filter>
     </ClInclude>
     <ClInclude Include="..\src\io\io_streambuf.hpp">
       <Filter>src\io</Filter>
@@ -147,8 +138,47 @@
     <ClInclude Include="..\test\test_udp.h">
       <Filter>test</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\io\udp_channel.hpp">
+    <ClInclude Include="..\src\thread\uv_thread_pool.hpp">
+      <Filter>src\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\io_macro.hpp">
       <Filter>src\io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\module\multi_thread_module.hpp">
+      <Filter>src\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\module\multi_priority_queue.hpp">
+      <Filter>src\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\test\test_http.h">
+      <Filter>test</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\http_server.hpp">
+      <Filter>src\io\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rd\http_parser\http_parser.h">
+      <Filter>src\io\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\http_macro.hpp">
+      <Filter>src\io\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\http_client.hpp">
+      <Filter>src\io\http</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\udp_channel.hpp">
+      <Filter>src\io\udp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\tcp_connector.hpp">
+      <Filter>src\io\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\tcp_channel.hpp">
+      <Filter>src\io\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\io\tcp_acceptor.hpp">
+      <Filter>src\io\tcp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\3rd\http_parser\uri.h">
+      <Filter>src\io\http</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -164,17 +194,26 @@
     <ClCompile Include="..\test\main.cpp">
       <Filter>test</Filter>
     </ClCompile>
-    <ClCompile Include="..\test\test_io.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
-    <ClCompile Include="..\test\test_timer.cpp">
-      <Filter>test</Filter>
-    </ClCompile>
     <ClCompile Include="..\test\test_udp.cpp">
       <Filter>test</Filter>
     </ClCompile>
-    <ClCompile Include="..\test\test_bus.cpp">
+    <ClCompile Include="..\src\thread\uv_thread_pool.cpp">
+      <Filter>src\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\module\multi_thread_module.cpp">
+      <Filter>src\module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test\test_http.cpp">
       <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\3rd\http_parser\http_parser.cpp">
+      <Filter>src\io\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\io\http_macro.cpp">
+      <Filter>src\io\http</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\io\udp_channel.cpp">
+      <Filter>src\io\udp</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

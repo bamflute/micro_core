@@ -4,6 +4,9 @@
 
 int test_io(int argc, char* argv[])
 {
+
+    std::shared_ptr<nio_thread_pool> pool;
+
     //bootstrap group
     BOOTSTRAP_POOL(pool, 1);
     //std::shared_ptr<nio_thread_pool> pool = std::make_shared<nio_thread_pool>();

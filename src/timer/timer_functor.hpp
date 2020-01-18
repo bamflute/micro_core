@@ -13,6 +13,7 @@ namespace micro
         {
             std::shared_ptr<message> msg = std::make_shared<message>();
             msg->set_name(BROADCAST_TIMER_TICK);
+            msg->set_priority(MIDDLE_PRIORITY);
             
             std::shared_ptr<broadcast_timer_tick> msg_body = std::make_shared<broadcast_timer_tick>();
             msg_body->time_tick = time_tick;

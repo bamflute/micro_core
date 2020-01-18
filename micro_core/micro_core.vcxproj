@@ -19,12 +19,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\3rd\http_parser\http_parser.h" />
+    <ClInclude Include="..\src\3rd\http_parser\uri.h" />
     <ClInclude Include="..\src\bus\func_traits.hpp" />
     <ClInclude Include="..\src\bus\message_bus.hpp" />
     <ClInclude Include="..\src\common\common.hpp" />
     <ClInclude Include="..\src\common\error.hpp" />
     <ClInclude Include="..\src\common\any_map.hpp" />
     <ClInclude Include="..\src\io\bootstrap.hpp" />
+    <ClInclude Include="..\src\io\http_client.hpp" />
+    <ClInclude Include="..\src\io\http_macro.hpp" />
+    <ClInclude Include="..\src\io\http_server.hpp" />
+    <ClInclude Include="..\src\io\io_macro.hpp" />
     <ClInclude Include="..\src\io\io_streambuf.hpp" />
     <ClInclude Include="..\src\io\channel.hpp" />
     <ClInclude Include="..\src\io\context_chain.hpp" />
@@ -44,9 +50,12 @@
     <ClInclude Include="..\src\module\base_module.hpp" />
     <ClInclude Include="..\src\module\module.hpp" />
     <ClInclude Include="..\src\module\module_func.h" />
+    <ClInclude Include="..\src\module\multi_priority_queue.hpp" />
+    <ClInclude Include="..\src\module\multi_thread_module.hpp" />
     <ClInclude Include="..\src\module\session.hpp" />
     <ClInclude Include="..\src\thread\lock.hpp" />
     <ClInclude Include="..\src\thread\nio_thread_pool.hpp" />
+    <ClInclude Include="..\src\thread\uv_thread_pool.hpp" />
     <ClInclude Include="..\src\timer\base_timer.hpp" />
     <ClInclude Include="..\src\timer\timer.hpp" />
     <ClInclude Include="..\src\timer\timer_common.hpp" />
@@ -54,19 +63,20 @@
     <ClInclude Include="..\src\timer\timer_functor.hpp" />
     <ClInclude Include="..\src\timer\timer_generator.hpp" />
     <ClInclude Include="..\src\timer\timer_message.hpp" />
-    <ClInclude Include="..\test\test_bus.h" />
-    <ClInclude Include="..\test\test_io.h" />
-    <ClInclude Include="..\test\test_timer.h" />
+    <ClInclude Include="..\test\test_http.h" />
     <ClInclude Include="..\test\test_udp.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\3rd\http_parser\http_parser.cpp" />
     <ClCompile Include="..\src\io\channel_id_allocator.cpp" />
+    <ClCompile Include="..\src\io\http_macro.cpp" />
+    <ClCompile Include="..\src\io\udp_channel.cpp" />
     <ClCompile Include="..\src\module\module_func.cpp" />
+    <ClCompile Include="..\src\module\multi_thread_module.cpp" />
+    <ClCompile Include="..\src\thread\uv_thread_pool.cpp" />
     <ClCompile Include="..\src\timer\timer_func.cpp" />
     <ClCompile Include="..\test\main.cpp" />
-    <ClCompile Include="..\test\test_bus.cpp" />
-    <ClCompile Include="..\test\test_io.cpp" />
-    <ClCompile Include="..\test\test_timer.cpp" />
+    <ClCompile Include="..\test\test_http.cpp" />
     <ClCompile Include="..\test\test_udp.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -121,9 +131,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(BOOST)\;$(SolutionDir)test;$(SolutionDir)src;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+    <IncludePath>$(BOOST)\;$(SolutionDir)test;$(SolutionDir)src;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)src\3rd\libuv-v1.x</IncludePath>
     <TargetExt>.lib</TargetExt>
-    <LibraryPath>$(BOOST)\vc141-x64\lib\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(BOOST)\vc141-x64\lib\;$(SolutionDir)lib\libuv-v1.x;$(LibraryPath)</LibraryPath>
+    <ReferencePath>$(ReferencePath)</ReferencePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -139,12 +150,13 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions);BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;_WIN32_WINNT=0x0600</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions);BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE;_WIN32_WINNT=0x0600;_WINSOCK_DEPRECATED_NO_WARNINGS</PreprocessorDefinitions>
       <LanguageStandard>stdcpp14</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;libboost_log_setup-vc141-mt-gd-x64-1_66.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;libboost_log_setup-vc141-mt-gd-x64-1_66.lib;libuv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;%(AdditionalDependencies)</AdditionalDependencies>

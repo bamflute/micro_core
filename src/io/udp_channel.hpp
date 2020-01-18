@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <message/message.hpp>
@@ -7,22 +8,48 @@
 #include <io/io_handler_initializer.hpp>
 #include <io/context_chain.hpp>
 #include <thread/nio_thread_pool.hpp>
+#include <io/io_macro.hpp>
+#include <thread/uv_thread_pool.hpp>
+
+
+__BEGIN_DECLS__
+#include <uv.h>
+__END_DECLS__
 
 
 #define MAX_UDP_RECV_BUF_LEN       10240
 #define MAX_UDP_SEND_BUF_LEN       10240
-#define MAX_UDP_QUEUE_SIZE             10240
+#define MAX_UDP_QUEUE_SIZE             102400
 
+
+#define LIB_UV_GET_CHANNEL_POINTER(HANDLE)              (*((udp_channel**)((char *)HANDLE - 8)))           //64 bit OS
 
 using boost::asio::ip::udp;
+
+__BEGIN_DECLS__
+extern void on_read_callback(uv_udp_t* handle, ssize_t nread, const uv_buf_t* rcvbuf, const struct sockaddr* addr, unsigned flags);
+extern void on_write_callback(uv_udp_send_t* req, int status);
+extern void on_close_callback(uv_handle_t* handle);
+extern void on_async_callback(uv_async_t* handle);
+__END_DECLS__
 
 
 namespace micro
 {
+
     namespace core
     {
 
-        class udp_channel : public std::enable_shared_from_this<udp_channel>, public boost::noncopyable
+        class send_data
+        {
+        public:
+
+            uv_buf_t * m_uv_buf;
+
+            sockaddr_in m_send_addr;
+        };
+
+        class udp_channel : public std::enable_shared_from_this<udp_channel>
         {
         public:
 
@@ -30,24 +57,28 @@ namespace micro
             typedef context_chain chain_type;
             typedef std::shared_ptr<io_streambuf> buf_ptr_type;
             typedef boost::asio::ip::udp::endpoint endpoint_type;
-            typedef std::list<std::shared_ptr<message>> queue_type;
+            typedef std::list<std::shared_ptr<message>> msg_queue_type;
+            typedef std::list<std::shared_ptr<send_data>> send_buf_queue_type;
             typedef std::shared_ptr<micro::core::nio_thread_pool> thr_pool_ptr_type;
             typedef std::shared_ptr<micro::core::io_handler_initializer> initializer_ptr_type;
             typedef std::shared_ptr<boost::asio::io_service> ios_ptr_type;
 
-            udp_channel(ios_ptr_type ios, endpoint_type endpoint)
-                : m_ios(ios)
+            udp_channel(std::shared_ptr<uv_thread_pool> pool, endpoint_type endpoint)
+                : m_pool(pool)
                 , m_local_endpoint(endpoint)
-                , m_socket(*ios, endpoint)
-                , m_recv_buf(std::make_shared<io_streambuf>(MAX_UDP_RECV_BUF_LEN))
-                , m_send_buf(std::make_shared<io_streambuf>(MAX_UDP_SEND_BUF_LEN))
+                , m_recv_buf(std::make_shared<io_streambuf>())
             {
-
+                m_self = this;
+                udp_channel * ch = LIB_UV_GET_CHANNEL_POINTER(&m_socket);
             }
 
             context_chain & inbound_pipeline() { return m_inbound_chain; }
 
             context_chain & outbound_pipeline() { return m_outbound_chain; }
+
+            buf_ptr_type recv_buf() { return m_recv_buf; }
+
+            boost::asio::ip::udp::endpoint get_remote_endpoint() { return m_remote_endpoint; }
 
             void channel_initializer(initializer_ptr_type channel_inbound_initializer, initializer_ptr_type channel_outbound_initializer)
             {
@@ -62,31 +93,33 @@ namespace micro
                 m_outbound_initializer->init(m_outbound_chain);
             }
 
-            virtual buf_ptr_type recv_buf() { return m_recv_buf; }
+            std::shared_ptr<message> front_message() { return m_msg_queue.size() ? m_msg_queue.front() : nullptr; }
 
-            virtual buf_ptr_type send_buf() { return m_send_buf; }
+            void pop_front_message() { m_msg_queue.pop_front(); }
 
-            std::shared_ptr<message> front_message() { return m_queue.size() ? m_queue.front() : nullptr; }
+            msg_queue_type & get_msg_queue() { return m_msg_queue; }
 
-            const  endpoint_type & get_remote_endpoint() const { return m_remote_endpoint; }
+            send_buf_queue_type & get_send_bufs() { return m_send_bufs; }
 
-            virtual int32_t init() { return this->read(); }
+            virtual int32_t init()
+            {
+                //loop init and async callback
+                uv_udp_init(m_pool->get_loop(), &m_socket);
+
+                uv_async_init(m_pool->get_loop(), &m_async, on_async_callback);
+                uv_handle_set_data((uv_handle_t*)&m_async, (void*)this);
+
+                //bind addr
+                uv_ip4_addr(GET_IP(m_local_endpoint), m_local_endpoint.port(), &m_addr);
+                uv_udp_bind(&m_socket, (const struct sockaddr*) &m_addr, UV_UDP_REUSEADDR);
+
+                return this->read(); 
+            }
 
             virtual int32_t close()
             {
-                boost::system::error_code error;
-
-                m_socket.cancel(error);
-                if (error)
-                {
-                    LOG_ERROR << "udp channel cancel error: " << error.message();
-                }
-
-                m_socket.close(error);
-                if (error)
-                {
-                    LOG_ERROR << "udp channel close error: " << error.message();
-                }
+                //close
+                uv_close((uv_handle_t*)&m_socket, on_close_callback);
 
                 return ERR_SUCCESS;
             }
@@ -102,180 +135,82 @@ namespace micro
 
             virtual int32_t write(std::shared_ptr<message> msg)
             {
-                try
+
                 {
-                    {
-                        std::unique_lock<std::mutex> lock(m_mutex);
+                    std::unique_lock<std::mutex> lock(m_mutex);
 
-                        if (m_queue.size() >= MAX_UDP_QUEUE_SIZE)
-                        {
-                            LOG_ERROR << "udp channel send queue is full: " << msg->get_name();
-                            return ERR_FAILED;
-                        }
+                    m_msg_queue.push_back(msg);                                     //pending ready to encode message
 
-                        if (m_queue.size())
-                        {
-                            LOG_DEBUG << "udp channel send msg: " << msg->get_name();
-                            m_queue.push_back(msg);
-                            return ERR_SUCCESS;
-                        }
-
-                        m_queue.push_back(msg);
-                    }
-
-                    if (m_send_buf->get_valid_read_len() > 0)
-                    {
-                        m_send_buf->reset();
-                    }
-
-                    assert(nullptr != shared_from_this());
-
-                    //handler chain
+                    //handle chain
                     m_outbound_chain.fire_channel_write();
-
-                    //LOG_DEBUG << "udp send buf: " << m_send_buf->to_string();
-
-                    do_write(msg->get_dst_endpoint());
                 }
-                catch (const std::exception &e)
-                {
-                    LOG_ERROR << "udp channel write std exception: " << e.what();
-                    m_outbound_chain.fire_exception_caught(e);
-                }
-                catch (const boost::exception & e)
-                {
-                    std::runtime_error err("udp channel write boost exception: " + boost::diagnostic_information(e));
-                    LOG_ERROR << "udp channel write boost exception: " << boost::diagnostic_information(e);
 
-                    m_outbound_chain.fire_exception_caught(err);
-                }
-                catch (...)
+                //async notify
+                int r = uv_async_send(&m_async);
+                if (0 != r)
                 {
-                    LOG_ERROR << "udp channel write exception";
-
-                    std::runtime_error e("udp channel write exception");
-                    m_outbound_chain.fire_exception_caught(e);
+                    LOG_ERROR << "udp channeluv async send error: " << std::to_string(r);
                 }
 
                 return ERR_SUCCESS;
             }
 
-            virtual int32_t read()
+            void on_async()
             {
-                m_socket.async_receive_from(
-                    boost::asio::buffer(m_recv_buf->get_write_ptr(), m_recv_buf->get_valid_write_len()), m_remote_endpoint,
-                    boost::bind(&udp_channel::on_read, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-
-                return ERR_SUCCESS;
-            }
-
-        protected:
-
-            void do_write(endpoint_type remote_endpoint)
-            {
-                m_socket.async_send_to(boost::asio::buffer(m_send_buf->get_read_ptr(), m_send_buf->get_valid_read_len()), remote_endpoint,
-                    boost::bind(&udp_channel::on_write, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
-            }
-
-            void on_write(const boost::system::error_code& error, size_t bytes_transferred)
-            {
-                if (error)
-                {
-                    if (boost::asio::error::operation_aborted == error.value())
-                    {
-                        LOG_ERROR << "udp channel on write aborted: " << error.value() << " " << error.message();
-                        return;
-                    }
-
-                    LOG_ERROR << "udp channel on write error: " << error.value() << " " << error.message();
-
-                    //handler chain
-                    m_outbound_chain.fire_exception_caught(std::runtime_error("udp channel on read error"));
-                    return;
-                }
 
                 try
                 {
-                    std::shared_ptr<message> msg = nullptr;
-
-                    if (0 == bytes_transferred)
-                    {
-                        msg = m_queue.front();
-                        do_write(msg->get_dst_endpoint());
-                    }
-                    else if (bytes_transferred < m_send_buf->get_valid_read_len())
-                    {
-                        assert(true);
-
-                        m_send_buf->move_read_ptr((uint32_t)bytes_transferred);
-
-                        msg = m_queue.front();
-                        do_write(msg->get_dst_endpoint());
-                    }
-                    else if (bytes_transferred == m_send_buf->get_valid_read_len())
-                    {
-                        std::unique_lock<std::mutex> lock(m_mutex);
-
-                        m_send_buf->reset();
-
-                        msg = m_queue.front();
-
-                        //handler chain
-                        m_outbound_chain.fire_channel_write_complete();
-
-                        msg = nullptr;
-
-                        m_queue.pop_front();
-
-                        //send next message
-                        if (0 != m_queue.size())
-                        {
-                            //handler chain
-                            m_outbound_chain.fire_channel_write();
-
-                            msg = m_queue.front();
-                            do_write(msg->get_dst_endpoint());
-                        }
-                    }
-                    else
-                    {
-                        std::runtime_error e("udp channel on write error: bytes_transferred larger than valid len");
-                        LOG_ERROR << "udp channel on write error: bytes_transferred larger than valid len";
-                        m_outbound_chain.fire_exception_caught(e);
-                    }
+                    do_write();
                 }
                 catch (const std::exception & e)
                 {
-                    LOG_ERROR << "udp channel on write std exception: " << e.what();
+                    LOG_ERROR << "udp channel on async std exception: " << e.what();
                     m_outbound_chain.fire_exception_caught(e);
-                }
-                catch (const boost::exception & e)
-                {
-                    std::runtime_error err("udp channel on write boost exception: " + boost::diagnostic_information(e));
-                    LOG_ERROR << "udp channel on write boost exception: " << boost::diagnostic_information(e);
-
-                    m_outbound_chain.fire_exception_caught(err);
                 }
                 catch (...)
                 {
-                    LOG_ERROR << "udp channel on write exception";
+                    LOG_ERROR << "udp channel on async exception";
 
                     std::runtime_error e("udp channel on write exception");
                     m_outbound_chain.fire_exception_caught(e);
                 }
             }
 
-            void on_read(const boost::system::error_code& error, size_t bytes_transferred)
+            void on_write(int status)
             {
-                if (error)
+                if (status)
                 {
-                    if (boost::asio::error::operation_aborted == error.value())
-                    {
-                        LOG_ERROR << "udp channel on read aborted: " << error.value() << " " << error.message();
-                        return;
-                    }
+                    LOG_ERROR << "udp channel on write error: " << status;
 
-                    LOG_ERROR << "udp channel on read error: " << error.value() << " " << error.message();
+                    //handler chain
+                    m_outbound_chain.fire_exception_caught(std::runtime_error("udp channel on write error"));
+                }
+
+                do_write();
+            }
+
+            static void alloc_recv_io_buf(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
+            {
+                udp_channel * ch = LIB_UV_GET_CHANNEL_POINTER(handle);
+                buf->base = ch->recv_buf()->get_write_ptr();
+                buf->len = ch->recv_buf()->get_valid_write_len();
+            }
+
+            virtual int32_t read()
+            {
+                int sock_buf_len = (int)(m_recv_buf->get_valid_read_len());
+                uv_recv_buffer_size((uv_handle_t*)&m_socket, &sock_buf_len);
+
+                uv_udp_recv_start(&m_socket, alloc_recv_io_buf, on_read_callback);
+
+                return ERR_SUCCESS;
+            }
+
+            void on_read(ssize_t bytes_transferred, const struct sockaddr* addr)
+            {
+                if (bytes_transferred < 0)
+                {
+                    LOG_ERROR << "udp channel on read error";
 
                     //handler chain
                     m_inbound_chain.fire_exception_caught(std::runtime_error("udp channel on read error"));
@@ -284,7 +219,7 @@ namespace micro
 
                 if (0 == bytes_transferred)
                 {
-                    read();
+                    //LOG_ERROR << "udp channel on read bytes ZERO";
                     return;
                 }
 
@@ -299,22 +234,23 @@ namespace micro
 
                     //LOG_DEBUG << "udp recv buf: " << m_recv_buf->to_string();
 
+                    struct sockaddr_in *sock = (struct sockaddr_in*)addr;
+                    char *saddr = inet_ntoa(sock->sin_addr);
+                    int port = ntohs(sock->sin_port);
+                    endpoint_type remote_endpoint(boost::asio::ip::address::from_string(saddr), port);
+                    m_remote_endpoint = remote_endpoint;
+
+                    //LOG_DEBUG << "remote ip: " << m_remote_endpoint.address().to_string() << " port: " << std::to_string(m_remote_endpoint.port());
+
                     //handler chain
                     m_inbound_chain.fire_channel_read_complete();
 
-                    read();
+                    m_recv_buf->reset();
                 }
                 catch (const std::exception & e)
                 {
                     LOG_ERROR << "udp channel on read std exception: " << e.what();
                     m_inbound_chain.fire_exception_caught(e);
-                }
-                catch (const boost::exception & e)
-                {
-                    std::runtime_error err("udp channel on read boost exception: " + boost::diagnostic_information(e));
-                    LOG_ERROR << "udp channel on read boost exception" << err.what();
-
-                    m_inbound_chain.fire_exception_caught(err);
                 }
                 catch (...)
                 {
@@ -325,24 +261,73 @@ namespace micro
                 }
             }
 
+        protected:
+
+            void do_write()
+            {
+
+                try
+                {
+                    std::unique_lock<std::mutex> lock(m_mutex);
+
+                    while (!m_send_bufs.empty())
+                    {
+                        std::shared_ptr<send_data> snd_data = m_send_bufs.front();
+
+                        //register data
+                        uv_udp_send_t *send_req = (uv_udp_send_t *)malloc(sizeof(uv_udp_send_t));
+                        uv_handle_set_data((uv_handle_t*)send_req, (void*)snd_data->m_uv_buf);
+
+                        //uint64_t timestamp = time_util::get_microseconds_of_day();
+                        //LOG_DEBUG << "====================send timestamp: " << std::to_string(timestamp) << " ====================";
+
+                        //uv send
+                        int r = uv_udp_send(send_req, &m_socket, snd_data->m_uv_buf, 1, (const struct sockaddr*) &snd_data->m_send_addr, on_write_callback);
+                        if (r)
+                        {
+                            LOG_ERROR << "uv_udp_send error: " << std::to_string(r);
+                        }
+
+                        m_send_bufs.pop_front();
+                    }
+                }
+                catch (const std::exception & e)
+                {
+                    LOG_ERROR << "udp channel on write std exception: " << e.what();
+                    m_outbound_chain.fire_exception_caught(e);
+                }
+                catch (...)
+                {
+                    LOG_ERROR << "udp channel on write exception";
+
+                    std::runtime_error e("udp channel on write exception");
+                    m_outbound_chain.fire_exception_caught(e);
+                }
+            }
 
         protected:
 
-            ios_ptr_type m_ios;
+            udp_channel * m_self;               //tricky define, have to define this for libuv C style get channel pointer; m_self must be close to m_socket
+
+            uv_udp_t m_socket;
+
+            uv_async_t m_async;
+
+            struct sockaddr_in m_addr;
+
+            std::shared_ptr<uv_thread_pool> m_pool;
 
             endpoint_type m_local_endpoint;
 
-            endpoint_type m_remote_endpoint;
+            msg_queue_type m_msg_queue;
 
-            udp::socket m_socket;
+            send_buf_queue_type m_send_bufs;
+
+            mutex_type m_mutex;
 
             buf_ptr_type m_recv_buf;
 
-            buf_ptr_type m_send_buf;
-
-            queue_type m_queue;
-
-            mutex_type m_mutex;
+            endpoint_type m_remote_endpoint;
 
             chain_type m_inbound_chain;
 
