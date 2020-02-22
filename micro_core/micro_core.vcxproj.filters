@@ -215,5 +215,8 @@
     <ClCompile Include="..\src\io\udp_channel.cpp">
       <Filter>src\io\udp</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\logger\logger.cpp">
+      <Filter>src\logger</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

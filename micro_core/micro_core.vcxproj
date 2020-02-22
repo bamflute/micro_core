@@ -71,6 +71,7 @@
     <ClCompile Include="..\src\io\channel_id_allocator.cpp" />
     <ClCompile Include="..\src\io\http_macro.cpp" />
     <ClCompile Include="..\src\io\udp_channel.cpp" />
+    <ClCompile Include="..\src\logger\logger.cpp" />
     <ClCompile Include="..\src\module\module_func.cpp" />
     <ClCompile Include="..\src\module\multi_thread_module.cpp" />
     <ClCompile Include="..\src\thread\uv_thread_pool.cpp" />

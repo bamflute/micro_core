@@ -19,12 +19,19 @@ void on_write_callback(uv_udp_send_t* req, int status)
     udp_channel * ch = LIB_UV_GET_CHANNEL_POINTER(req->handle);
     ch->on_write(status);
 
-    //get uv buf data
-    uv_buf_t * buf = (uv_buf_t *)uv_handle_get_data((uv_handle_t*)req);
+    //get uv send data
+    send_data *snd_data = (send_data *)uv_handle_get_data((uv_handle_t*)req);
 
-    free(buf->base);
-    free(buf);
-    free(req);
+    assert(snd_data->m_uv_buf_count >0 && snd_data->m_uv_buf != nullptr);
+    
+    //send buffer base
+    for (int i = 0; i < snd_data->m_uv_buf_count; i++)
+    {
+        free((snd_data->m_uv_buf + i)->base);
+    }
+
+    free(snd_data->m_uv_buf);
+    free(snd_data);
 }
 
 void on_close_callback(uv_handle_t* handle)

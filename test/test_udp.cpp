@@ -71,7 +71,7 @@ public:
             return ctx.fire_channel_write();
         }
 
-        std::shared_ptr<send_data> snd_data = std::make_shared<send_data>();                        //malloc should check
+        send_data *snd_data = new send_data();                        //malloc should check
 
         uv_ip4_addr(GET_IP(msg->get_dst_endpoint()), msg->get_dst_endpoint().port(), &snd_data->m_send_addr);
 
@@ -151,7 +151,7 @@ public:
             return ctx.fire_channel_write();
         }
 
-        std::shared_ptr<send_data> snd_data = std::make_shared<send_data>();                        //malloc should check
+        send_data *snd_data = new send_data();                        //malloc should check
 
         uv_ip4_addr(GET_IP(msg->get_dst_endpoint()), msg->get_dst_endpoint().port(), &snd_data->m_send_addr);
 

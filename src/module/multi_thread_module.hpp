@@ -40,8 +40,9 @@ namespace micro
             typedef std::unordered_map<std::string, msg_functor_type> msg_functors_type;
 
 
-            worker_thread()
-                : m_exited(false)
+            worker_thread(uint32_t thread_idx)
+                : m_thread_idx(thread_idx)
+                , m_exited(false)
                 , m_functor(worker_task_func)
             {}
 
@@ -88,7 +89,7 @@ namespace micro
 
                 if (m_queue.size() >= MAX_THREAD_MSG_COUNT)
                 {
-                    LOG_ERROR << "worker thread message queue full";
+                    LOG_ERROR << "worker thread message queue full: " << msg->get_name();
                     return ERR_FAILED;
                 }
 
@@ -161,6 +162,8 @@ namespace micro
 
         protected:
 
+            uint32_t m_thread_idx;
+
             bool m_exited;
 
             mutex_type m_mutex;
@@ -192,7 +195,7 @@ namespace micro
                 int threads_count = boost::any_cast<int>(vars.get(MULTI_THREADS_COUNT));
                 for (int i = 0; i < threads_count; i++)
                 {
-                    std::shared_ptr<worker_thread> worker = std::make_shared<worker_thread>();
+                    std::shared_ptr<worker_thread> worker = std::make_shared<worker_thread>(i);
                     worker->init();
                     m_workers.push_back(worker);
                 }
@@ -241,7 +244,7 @@ namespace micro
                 std::unique_lock<std::mutex> lock(m_mutex);
                 ret = m_workers.front()->send(msg);
 
-                if (count_down <= 0)
+                if (--count_down <= 0)
                 {
                     auto worker = m_workers.front();
 

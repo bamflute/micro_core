@@ -249,7 +249,7 @@ namespace micro
 
                 if (m_send_queue->size() >= MAX_MSG_COUNT)
                 {
-                    LOG_ERROR << "module message queue full: " << this->name();
+                    LOG_ERROR << "module message queue full: " << this->name() << " send msg: " << msg->get_name();
                     return ERR_FAILED;
                 }
 

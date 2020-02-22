@@ -20,14 +20,20 @@
 
 namespace bf = boost::filesystem;
 
+//logger control
+extern bool g_enable_trace;
+extern bool g_enable_debug;
+extern bool g_enable_info;
+extern bool g_enable_warning;
+extern bool g_enable_error;
+extern bool g_enable_fatal;
 
-
-#define LOG_TRACE               BOOST_LOG_TRIVIAL(trace)
-#define LOG_DEBUG              BOOST_LOG_TRIVIAL(debug)
-#define LOG_INFO                  BOOST_LOG_TRIVIAL(info)
-#define LOG_WARNING         BOOST_LOG_TRIVIAL(warning)
-#define LOG_ERROR              BOOST_LOG_TRIVIAL(error)
-#define LOG_FATAL               BOOST_LOG_TRIVIAL(fatal)
+#define LOG_TRACE               if (g_enable_trace) BOOST_LOG_TRIVIAL(trace)
+#define LOG_DEBUG              if (g_enable_debug) BOOST_LOG_TRIVIAL(debug)
+#define LOG_INFO                  if (g_enable_info) BOOST_LOG_TRIVIAL(info)
+#define LOG_WARNING         if (g_enable_warning) BOOST_LOG_TRIVIAL(warning)
+#define LOG_ERROR              if (g_enable_error) BOOST_LOG_TRIVIAL(error)
+#define LOG_FATAL               if (g_enable_fatal) BOOST_LOG_TRIVIAL(fatal)
 
 
 namespace micro
@@ -62,6 +68,7 @@ namespace micro
 
             static int32_t init(bf::path log_path)
             {
+
                 boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
 
                 try

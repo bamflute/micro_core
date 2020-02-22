@@ -114,6 +114,16 @@ namespace micro
                 if (m_head) m_head->fire_channel_write_complete();
             }
 
+            virtual void fire_channel_batch_write()
+            {
+                if (m_head) m_head->fire_channel_batch_write();
+            }
+
+            virtual void fire_channel_batch_write_complete()
+            {
+                if (m_head) m_head->fire_channel_batch_write_complete();
+            }
+
             virtual void fire_bind(const endpoint_type &local_addr)
             {
                 if (m_head) m_head->fire_bind(local_addr);

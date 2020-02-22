@@ -209,6 +209,44 @@ namespace micro
                 }
             }
 
+            virtual void fire_channel_batch_write()
+            {
+                context_ptr_type next = find_next_context(MASK_CHANNEL_BATCH_WRITE);
+                if (next)
+                {
+                    next->invoke_channel_batch_write();
+                }
+            }
+
+            virtual void invoke_channel_batch_write()
+            {
+                if (m_handler)
+                {
+                    auto handler = DYN_CAST(channel_outbound_handler, m_handler);
+                    assert(handler != nullptr);
+                    handler->channel_batch_write(*this);
+                }
+            }
+
+            virtual void fire_channel_batch_write_complete()
+            {
+                context_ptr_type next = find_next_context(MASK_CHANNEL_BATCH_WRITE_COMPLETE);
+                if (next)
+                {
+                    next->invoke_channel_batch_write_complete();
+                }
+            }
+
+            virtual void invoke_channel_batch_write_complete()
+            {
+                if (m_handler)
+                {
+                    auto handler = DYN_CAST(channel_outbound_handler, m_handler);
+                    assert(handler != nullptr);
+                    handler->channel_batch_write_complete(*this);
+                }
+            }
+
             virtual void fire_bind(const endpoint_type &local_addr)
             {
                 context_ptr_type next = find_next_context(MASK_BIND);

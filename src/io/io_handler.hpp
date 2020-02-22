@@ -84,6 +84,10 @@ namespace micro
 
             virtual void channel_write_complete(context_type &ctx) { ctx.fire_channel_write_complete(); }
 
+            virtual void channel_batch_write(context_type &ctx) { ctx.fire_channel_batch_write(); }
+
+            virtual void channel_batch_write_complete(context_type &ctx) { ctx.fire_channel_batch_write_complete(); }
+
             virtual void close(context_type &ctx) { ctx.fire_close(); }
 
         };

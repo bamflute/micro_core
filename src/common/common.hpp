@@ -5,6 +5,7 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <logger/logger.hpp>
 
 #ifdef __cplusplus
 #define __BEGIN_DECLS__               extern "C" {
@@ -49,3 +50,31 @@ public:
 
 };
 
+class time_cost_util
+{
+public:
+
+    time_cost_util(const char * tips) : m_tips(tips) 
+    {
+        m_begin_timestamp = time_util::get_microseconds_of_day();
+    }
+
+    virtual ~time_cost_util()
+    {
+        LOG_INFO << m_tips << std::to_string(time_util::get_microseconds_of_day() - m_begin_timestamp) << " us";
+    }
+
+protected:
+
+    const char * m_tips;
+
+    uint64_t m_begin_timestamp;
+
+};
+
+#define BEGIN_TIME_COST(TIPS) \
+{\
+time_cost_util tcu(TIPS);
+
+#define END_TIME_COST \
+}
