@@ -6,7 +6,7 @@ using namespace std::chrono_literals;
 
 void test_http_client(int argc, char* argv[])
 {
-    http_client client("http://localhost:8000", 
+    http_client client("http://www.baidu.com", 
         [](auto &res) 
     {
         std::cout << res.m_body << std::endl;

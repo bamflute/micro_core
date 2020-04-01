@@ -273,6 +273,11 @@ UV_EXTERN int uv_replace_allocator(uv_malloc_func malloc_func,
 UV_EXTERN uv_loop_t* uv_default_loop(void);
 UV_EXTERN int uv_loop_init(uv_loop_t* loop);
 UV_EXTERN int uv_loop_close(uv_loop_t* loop);
+
+//added by Bruce
+
+UV_EXTERN uv_loop_t* uv_loop_new_with_worker_count(unsigned int worker_count);
+
 /*
  * NOTE:
  *  This function is DEPRECATED (to be removed after 0.12), users should
@@ -1740,6 +1745,7 @@ union uv_any_req {
 struct uv_loop_s {
   /* User data - use this for whatever. */
   void* data;
+  unsigned int worker_count;
   /* Loop reference counting. */
   unsigned int active_handles;
   void* handle_queue[2];

@@ -18,7 +18,7 @@
 #include <module/multi_priority_queue.hpp>
 
 
-#define MAX_MSG_COUNT                   500000
+#define MAX_MSG_COUNT                   5000000
 #define MAX_TRIGGER_TIMES               0xFFFFFFFFFFFFFFFF
 
 
@@ -174,6 +174,11 @@ namespace micro
             int32_t start()
             {
                 m_thr = std::make_shared<std::thread>(m_functor, this);
+                
+#ifdef WIN32
+                ::SetThreadPriority(m_thr->native_handle(), THREAD_PRIORITY_TIME_CRITICAL);
+#endif // WIN32
+
                 return ERR_SUCCESS;
             }
 

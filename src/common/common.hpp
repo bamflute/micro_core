@@ -1,15 +1,12 @@
 #pragma once
 
-#include <time.h>
-#include <sys/timeb.h>
+#include <atomic>
+#include <cstdint>
 #include <boost/program_options.hpp>
-#include <iostream>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <logger/logger.hpp>
 
 #ifdef __cplusplus
 #define __BEGIN_DECLS__               extern "C" {
-#define __END_DECLS__                     }
+#define __END_DECLS__                                        }
 #else
 #define __BEGIN_DECLS
 #define __END_DECLS
@@ -30,39 +27,29 @@ class time_util
 {
 public:
 
-    static inline uint64_t get_mill_seconds_from_19700101()
-    {
-        struct timeb  tm;
-        ftime(&tm);
-        return tm.time * 1000 + tm.millitm;
-    }
+    static uint64_t get_seconds_from_19700101();
 
-    static inline uint64_t get_seconds_from_19700101()
-    {
-        return time(NULL);
-    }
+    static uint64_t get_mill_seconds_from_19700101();
 
-    static inline uint64_t get_microseconds_of_day()
-    {
-        boost::posix_time::ptime now = boost::posix_time::microsec_clock::universal_time() + boost::posix_time::hours(8);
-        return now.time_of_day().total_microseconds();
-    }
+    static uint64_t get_micro_seconds_from_19700101();
+
+    static uint64_t get_microseconds_of_day();
 
 };
+
+extern bool g_enable_time_cost;
+
+extern void enable_time_cost();
+
+extern void disable_time_cost();
 
 class time_cost_util
 {
 public:
 
-    time_cost_util(const char * tips) : m_tips(tips) 
-    {
-        m_begin_timestamp = time_util::get_microseconds_of_day();
-    }
+    time_cost_util(const char * tips);
 
-    virtual ~time_cost_util()
-    {
-        LOG_INFO << m_tips << std::to_string(time_util::get_microseconds_of_day() - m_begin_timestamp) << " us";
-    }
+    virtual ~time_cost_util();
 
 protected:
 

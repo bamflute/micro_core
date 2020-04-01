@@ -110,7 +110,6 @@ namespace micro
                 m_channel->channel_inbound_initializer(m_channel_inbound_initializer);
                 m_channel->channel_outbound_initializer(m_channel_outbound_initializer);
 
-                m_channel->init();
                 return ERR_SUCCESS;
             }
 
@@ -158,6 +157,8 @@ namespace micro
                 }
 
                 m_connected = true;
+
+                m_channel->init();
 
                 m_channel->set_state(CHANNEL_ACTIVE);
                 m_channel->init_addr_info();

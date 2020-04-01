@@ -62,7 +62,11 @@ namespace micro
                 //connect();
             }
 
-            ~http_client() {}
+            ~http_client() 
+            {
+            m_pool.stop();
+            m_pool.exit();
+            }
 
             void connect()
             {

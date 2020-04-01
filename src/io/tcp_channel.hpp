@@ -104,6 +104,18 @@ namespace micro
                 m_outbound_initializer->init(m_outbound_chain);
             }
 
+            //vars stored by service
+            template<typename T>
+            void set(std::string name, T value)
+            {
+                m_vars.set(name, value);
+            }
+
+            boost::any get(std::string name)
+            {
+                return m_vars.get(name);
+            }
+
             //get object in tcp channel
 
             virtual boost::asio::ip::tcp::socket & socket() { return m_socket; }
@@ -289,6 +301,10 @@ namespace micro
                 m_recv_buf_len = m_opts.count("MAX_RECV_BUF_LEN") ? boost::any_cast<uint32_t>(m_opts.get("MAX_RECV_BUF_LEN")) : MAX_RECV_BUF_LEN;
                 m_send_buf_len = m_opts.count("MAX_SEND_BUF_LEN") ? boost::any_cast<uint32_t>(m_opts.get("MAX_SEND_BUF_LEN")) : MAX_SEND_BUF_LEN;
                 assert(m_recv_buf_len <= MAX_RECV_BUF_LEN && m_send_buf_len <= MAX_SEND_BUF_LEN);
+
+                m_socket.non_blocking(true);
+                m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+                m_socket.set_option(boost::asio::socket_base::keep_alive(true));
             }
 
             void init_buf()
@@ -511,6 +527,8 @@ namespace micro
             endpoint_type m_local_addr;
 
             std::string m_addr_info;
+
+            any_map m_vars;
 
         };
 

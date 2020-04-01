@@ -180,6 +180,12 @@
     <ClInclude Include="..\src\3rd\http_parser\uri.h">
       <Filter>src\io\http</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\thread\svc_thread.hpp">
+      <Filter>src\thread</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\common\core_macro.h">
+      <Filter>src\common</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\module\module_func.cpp">
@@ -217,6 +223,12 @@
     </ClCompile>
     <ClCompile Include="..\src\logger\logger.cpp">
       <Filter>src\logger</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\common\common.cpp">
+      <Filter>src\common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\thread\svc_thread.cpp">
+      <Filter>src\thread</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -3,5 +3,6 @@
 
 int main(int argc, char* argv[])
 {
-    return test_http_server(argc, argv);
+    test_http_client(argc, argv);
+    return 0;
 }

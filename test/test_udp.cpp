@@ -188,12 +188,12 @@ int test_udp(int argc, char* argv[])
     boost::asio::ip::udp::endpoint server_endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 39999);
     //boost::asio::ip::udp::endpoint server_endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 39999);
     //boost::asio::ip::udp::endpoint server_endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 9999);
-    std::shared_ptr<udp_channel> server_channel = std::make_shared<udp_channel>(pool, server_endpoint);
+    std::shared_ptr<udp_channel> server_channel = std::make_shared<udp_channel>(pool.get(), server_endpoint);
 
     server_channel->channel_initializer(std::make_shared<echo_udp_server_initializer>(), std::make_shared<echo_udp_server_initializer>());
     server_channel->init();
 
-    auto client_channel = std::make_shared<udp_channel>(pool, udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 19999));
+    auto client_channel = std::make_shared<udp_channel>(pool.get(), udp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), 19999));
     client_channel->channel_initializer(std::make_shared<echo_udp_client_initializer>(), std::make_shared<echo_udp_client_initializer>());
     client_channel->init();
 
