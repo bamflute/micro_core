@@ -138,7 +138,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(BOOST)\;$(SolutionDir)test;$(SolutionDir)src;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)src\3rd\libuv-v1.x</IncludePath>
     <TargetExt>.lib</TargetExt>
-    <LibraryPath>$(BOOST)\vc141-x64\lib\;$(SolutionDir)lib\libuv-v1.x;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(BOOST)\vc141-x64\lib\;SolutionDir)lib\libuv-v1.x;$(SolutionDir)lib\gperftools-2.7.90;$(LibraryPath)</LibraryPath>
     <ReferencePath>$(ReferencePath)</ReferencePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -173,10 +173,11 @@
       <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;libboost_log_setup-vc141-mt-gd-x64-1_66.lib;libuv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;libtcmalloc_minimal.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(BOOST)\vc141-x64\lib\</AdditionalLibraryDirectories>
+      <ForceSymbolReferences>__tcmalloc</ForceSymbolReferences>
     </Lib>
     <ProjectReference>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>

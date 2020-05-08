@@ -16,6 +16,7 @@
 #include <module/module_func.h>
 #include <bus/message_bus.hpp>
 #include <module/multi_priority_queue.hpp>
+#include <common/core_macro.h>
 
 
 #define MAX_MSG_COUNT                   5000000
@@ -227,7 +228,16 @@ namespace micro
                     while (!m_worker_queue->empty())
                     {
                         msg = m_worker_queue->front();
-                        on_invoke(msg);
+
+                        try
+                        {
+                            on_invoke(msg);
+                        }
+                        catch (...)
+                        {
+                            LOG_ERROR << "!!!!!! module on invoke exception: " << this->name() << " msg name: " << msg->get_name();
+                        }
+
                         m_worker_queue->pop();
                     }
 
@@ -254,8 +264,12 @@ namespace micro
 
                 if (m_send_queue->size() >= MAX_MSG_COUNT)
                 {
-                    LOG_ERROR << "module message queue full: " << this->name() << " send msg: " << msg->get_name();
-                    return ERR_FAILED;
+                    BEGIN_COUNT_TO_DO(MSG_QUEUE, 100000)
+                    LOG_WARNING << "module message queue overloaded: " << this->name() << " send msg: " << msg->get_name() 
+                        << " send queue size: " << std::to_string(m_send_queue->size()) 
+                        << " worker queue size: " << std::to_string(m_worker_queue->size());
+                    END_COUNT_TO_DO
+                    //return ERR_FAILED;
                 }
 
                 m_send_queue->push(msg, msg->m_header->m_priority);

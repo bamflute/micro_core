@@ -5,14 +5,17 @@
 #include <queue>
 #include <memory>
 #include <unordered_map>
+#include <algorithm>
 #include <module/base_module.hpp>
 #include <message/message.hpp>
 #include <message/message.hpp>
 #include <logger/logger.hpp>
+#include <common/common.hpp>
+#include <common/core_macro.h>
 
 
 #define WORKER_THREAD_COUNT                             10
-#define RANDOM_SEND_MSG_COUNT_DOWN          1000
+#define RANDOM_SEND_MSG_COUNT_DOWN          100
 #define MAX_THREAD_MSG_COUNT                        5000000
 #define MULTI_THREADS_COUNT                     "multi_threads_count"
 
@@ -49,7 +52,7 @@ namespace micro
 
             ~worker_thread() = default;
 
-            virtual int32_t init() 
+            virtual int32_t init(any_map &vars)
             {
                 return ERR_SUCCESS; 
             }
@@ -92,8 +95,10 @@ namespace micro
 
                 if (m_queue.size() >= MAX_THREAD_MSG_COUNT)
                 {
-                    LOG_ERROR << "worker thread message queue full: " << msg->get_name();
-                    return ERR_FAILED;
+                    BEGIN_COUNT_TO_DO(MSG_QUEUE, 100000)
+                    LOG_WARNING << "worker thread message overloaded: " << msg->get_name() << " size: " << std::to_string(m_queue.size());
+                    END_COUNT_TO_DO
+                    //return ERR_FAILED;
                 }
 
                 m_queue.push(msg);
@@ -131,11 +136,24 @@ namespace micro
                         if (is_empty()) continue;
                         m_queue.swap(msg_queue);
                     }
+                    
+                    BEGIN_COUNT_TO_DO(MSG_QUEUE, 100000)
+                        LOG_INFO << "worker thread msg queue size: " << std::to_string(msg_queue.size()) << " idx: " << std::to_string(m_thread_idx);
+                    END_COUNT_TO_DO
 
                     while (!msg_queue.empty())
                     {
                         msg = msg_queue.front();
-                        on_invoke(msg);
+
+                        try
+                        {
+                            on_invoke(msg);
+                        }
+                        catch (...)
+                        {
+                            LOG_ERROR << "!!!!!! multi thread module on invoke exception: " << msg->get_name();
+                        }
+
                         msg_queue.pop();
                     }
 
@@ -191,23 +209,57 @@ namespace micro
         {
         public:
 
-            typedef std::mutex mutex_type;
+            //typedef std::mutex mutex_type;
+
+            multi_thread_module() : m_count_down(RANDOM_SEND_MSG_COUNT_DOWN), m_cur_thread_idx(0), m_round_robin_thread_idx(0), m_threads_count(1) {}
 
             virtual ~multi_thread_module() {}
 
             virtual std::string name() const { return "multi thread module"; };
 
-            virtual int32_t init(any_map &vars) 
+            virtual int32_t init(any_map &vars)
             { 
                 m_threads_count = boost::any_cast<uint32_t>(vars.get(MULTI_THREADS_COUNT));
+                m_threads_count = std::max(m_threads_count, (uint32_t)1);
+
+                m_workers = new std::shared_ptr<worker_thread>[m_threads_count];
+
                 for (uint32_t i = 0; i < m_threads_count; i++)
                 {
                     std::shared_ptr<worker_thread> worker = std::make_shared<worker_thread>(i);
-                    worker->init();
-                    m_workers.push_back(worker);
+                    worker->init(vars);
+
+                    m_workers[i] = worker;
                 }
 
                 return service_init(vars);
+            }
+
+            template<class WORKER_THREAD_MODULE>
+            int32_t init_with_template_class(any_map &vars)
+            {
+                m_threads_count = boost::any_cast<uint32_t>(vars.get(MULTI_THREADS_COUNT));
+                m_threads_count = std::max(m_threads_count, (uint32_t)1);
+
+                m_workers = new std::shared_ptr<worker_thread>[m_threads_count];
+
+                create_worker_thread<WORKER_THREAD_MODULE>();
+
+                return service_init(vars);
+            }
+
+            template<class WORKER_THREAD_MODULE>
+            int32_t create_worker_thread()
+            {
+                for (uint32_t i = 0; i < m_threads_count; i++)
+                {
+                    std::shared_ptr<worker_thread> worker = std::make_shared<WORKER_THREAD_MODULE>(i);
+                    worker->init();
+
+                    m_workers[i] = worker;
+                }
+
+                return ERR_SUCCESS;
             }
 
             size_t size()
@@ -215,8 +267,7 @@ namespace micro
                 size_t total_size = 0;
                 for (uint32_t i = 0; i < m_threads_count; i++)
                 {
-                    std::shared_ptr<worker_thread> worker = std::make_shared<worker_thread>(i);
-                    total_size += worker->size();
+                    total_size += m_workers[i]->size();
                 }
 
                 return total_size;
@@ -224,19 +275,21 @@ namespace micro
 
             virtual int32_t exit() 
             {
-                for (auto worker : m_workers)
+                for (uint32_t i = 0; i < m_threads_count; i++)
                 {
-                    worker->exit();
+                    m_workers[i]->exit();
                 }
+
+                delete[]m_workers;
 
                 return service_exit();
             }
 
             virtual int32_t start() 
             {
-                for (auto worker : m_workers)
+                for (uint32_t i = 0; i < m_threads_count; i++)
                 {
-                    worker->start();
+                    m_workers[i]->start();
                 }
 
                 return ERR_SUCCESS; 
@@ -244,9 +297,9 @@ namespace micro
 
             virtual int32_t stop()
             {
-                for (auto worker : m_workers)
+                for (uint32_t i = 0; i < m_threads_count; i++)
                 {
-                    worker->stop();
+                    m_workers[i]->stop();
                 }
 
                 return ERR_SUCCESS;
@@ -254,48 +307,57 @@ namespace micro
 
             virtual int32_t on_timer(std::shared_ptr<base_timer> timer) { return ERR_SUCCESS; }
 
-            int32_t send(std::shared_ptr<message> msg)
+            virtual int32_t send(std::shared_ptr<message> msg)
             {
-                static int count_down = RANDOM_SEND_MSG_COUNT_DOWN;
-
                 int32_t ret = ERR_SUCCESS;
 
-                std::unique_lock<std::mutex> lock(m_mutex);
-                ret = m_workers.front()->send(msg);
+                //std::unique_lock<std::mutex> lock(m_mutex);
+                ret = m_workers[m_cur_thread_idx % m_threads_count]->send(msg);
 
-                if (--count_down <= 0)
+                if (--m_count_down <= 0)
                 {
-                    auto worker = m_workers.front();
+                    //auto worker = m_workers.front();
 
-                    m_workers.pop_front();
-                    m_workers.push_back(worker);
+                    //m_workers.pop_front();
+                    //m_workers.push_back(worker);
+                    
+                    m_cur_thread_idx++;
 
-                    count_down = RANDOM_SEND_MSG_COUNT_DOWN;
+                    m_count_down = RANDOM_SEND_MSG_COUNT_DOWN;
                 }
 
                 return ret;
             }
 
-            int32_t round_robin_send(std::shared_ptr<message> msg)
+            virtual int32_t round_robin_send(std::shared_ptr<message> msg)
             {
-                int32_t ret = ERR_SUCCESS;
+                //int32_t ret = ERR_SUCCESS;
 
-                std::unique_lock<std::mutex> lock(m_mutex);
+                //std::unique_lock<std::mutex> lock(m_mutex);
 
-                ret = m_workers.front()->send(msg);
+                //auto worker = m_workers.front();
+                //m_workers.pop_front();
+                //m_workers.push_back(worker);
+                //return ret;
 
-                auto worker = m_workers.front();
-                m_workers.pop_front();
-                m_workers.push_back(worker);
+                return m_workers[m_round_robin_thread_idx++  % m_threads_count]->send(msg);
+            }
 
-                return ret;
+            virtual int32_t broadcast(std::shared_ptr<message> msg)
+            {
+                for (uint32_t i = 0; i < m_threads_count; i++)
+                {
+                    m_workers[i]->send(msg);
+                }
+
+                return ERR_SUCCESS;
             }
 
             void register_msg_functor(const std::string & msg_name, worker_thread::msg_functor_type functor)
             {
-                for (auto worker : m_workers)
+                for (uint32_t i = 0; i < m_threads_count; i++)
                 {
-                    worker->register_msg_functor(msg_name, functor);
+                    m_workers[i]->register_msg_functor(msg_name, functor);
                 }
             }
 
@@ -307,11 +369,17 @@ namespace micro
 
         protected:
 
-            mutex_type m_mutex;
+            //mutex_type m_mutex;
+
+            std::atomic<int32_t> m_count_down;
+
+            std::atomic<uint32_t> m_cur_thread_idx;
+
+            std::atomic<uint32_t> m_round_robin_thread_idx;
 
             uint32_t m_threads_count;
 
-            std::list<std::shared_ptr<worker_thread>> m_workers;
+            std::shared_ptr<worker_thread> * m_workers;
 
         };
 

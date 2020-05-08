@@ -22,6 +22,11 @@ void on_write_callback(uv_udp_send_t* req, int status)
     //get uv send data
     send_data *snd_data = (send_data *)uv_handle_get_data((uv_handle_t*)req);
 
+    if (snd_data->m_extra_info && (0 == ((uint64_t)(snd_data->m_extra_info)) % 10000))
+    {
+        LOG_INFO << "file extra info: " << std::to_string((uint64_t)(snd_data->m_extra_info));
+    }
+
     //assert
     assert(snd_data->m_uv_buf_count > 0 && snd_data->m_uv_buf != nullptr);
 
@@ -35,6 +40,7 @@ void on_write_callback(uv_udp_send_t* req, int status)
 
     free(snd_data->m_uv_buf);
     free(snd_data);
+    free(req);
 
     END_TIME_COST
 }

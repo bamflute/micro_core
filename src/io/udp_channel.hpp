@@ -26,7 +26,7 @@ __END_DECLS__
 #define MAX_UDP_RECV_BUF_LEN       10240
 #define MAX_UDP_SEND_BUF_LEN       10240
 #define MAX_UDP_QUEUE_SIZE             102400
-#define POP_SEND_BUF_ONE_TIME       10
+#define POP_SEND_BUF_ONE_TIME       100
 
 
 #define LIB_UV_GET_CHANNEL_POINTER(HANDLE)              (*((udp_channel**)((char *)HANDLE - 8)))           //64 bit OS
@@ -56,6 +56,8 @@ namespace micro
             size_t m_uv_buf_count = 0;
 
             sockaddr_in m_send_addr;
+
+            void * m_extra_info = nullptr;
         };
 
         class batch_send_message

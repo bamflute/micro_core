@@ -28,7 +28,7 @@ namespace micro
             typedef std::unordered_multimap<std::string, any_type> invokers_type;
             typedef std::unordered_multimap<std::string, any_type>::iterator iterator_type;
 
-            message_bus() {}
+            message_bus() : m_msg_invokers(128) {}
             virtual ~message_bus() { w_lock_guard lock_guard(m_mutex); m_msg_invokers.clear(); }
 
         public:
