@@ -12,6 +12,7 @@
 #include <thread/uv_thread_pool.hpp>
 #include <random>
 #include <common/core_macro.h>
+#include "channel_id_allocator.h"
 
 using std::cout; using std::endl;
 using std::default_random_engine;
@@ -92,6 +93,7 @@ namespace micro
                 , m_urd(1, 3)
                 , m_local_endpoint(endpoint)
                 , m_recv_buf(std::make_shared<io_streambuf>())
+				, m_channel_id(get_new_channel_id())
             {
                 m_self = this;
                 udp_channel * ch = LIB_UV_GET_CHANNEL_POINTER(&m_socket);
@@ -103,6 +105,8 @@ namespace micro
             context_chain & outbound_pipeline() { return m_outbound_chain; }
 
             buf_ptr_type recv_buf() { return m_recv_buf; }
+
+			uint64_t channel_id() { return m_channel_id; }
 
             boost::asio::ip::udp::endpoint get_remote_endpoint() { return m_remote_endpoint; }
 
@@ -597,6 +601,8 @@ namespace micro
             struct sockaddr_in m_addr;
 
             uv_thread_pool * m_pool;
+
+			uint64_t m_channel_id;
 
             endpoint_type m_local_endpoint;
 

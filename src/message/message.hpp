@@ -51,6 +51,8 @@ namespace micro
             uint64_t m_channel_id;
             uint32_t m_channel_type;
 
+			std::string m_edge_namespace;
+
             boost::asio::ip::udp::endpoint m_endpoint;
         };
 
