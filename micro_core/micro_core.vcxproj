@@ -173,7 +173,7 @@
       <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;libboost_log_setup-vc141-mt-gd-x64-1_66.lib;libuv.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>libboost_log-vc141-mt-gd-x64-1_66.lib;libtcmalloc_minimal.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libtcmalloc_minimal.lib;libboost_log-vc141-mt-gd-x64-1_66.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(BOOST)\vc141-x64\lib\</AdditionalLibraryDirectories>
