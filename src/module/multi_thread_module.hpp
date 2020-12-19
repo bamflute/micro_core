@@ -243,18 +243,18 @@ namespace micro
 
                 m_workers = new std::shared_ptr<worker_thread>[m_threads_count];
 
-                create_worker_thread<WORKER_THREAD_MODULE>();
+                create_worker_thread<WORKER_THREAD_MODULE>(vars);
 
                 return service_init(vars);
             }
 
             template<class WORKER_THREAD_MODULE>
-            int32_t create_worker_thread()
+            int32_t create_worker_thread(any_map &vars)
             {
                 for (uint32_t i = 0; i < m_threads_count; i++)
                 {
                     std::shared_ptr<worker_thread> worker = std::make_shared<WORKER_THREAD_MODULE>(i);
-                    worker->init();
+                    worker->init(vars);
 
                     m_workers[i] = worker;
                 }
