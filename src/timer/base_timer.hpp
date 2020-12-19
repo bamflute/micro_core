@@ -7,6 +7,8 @@
 #pragma once
 
 #include <timer/timer_common.hpp>
+#include <string>
+#include <cmath>
 
 namespace micro
 {

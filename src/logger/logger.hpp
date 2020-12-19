@@ -19,6 +19,8 @@
 
 
 namespace bf = boost::filesystem;
+namespace logging = boost::log;
+namespace attrs = boost::log::attributes;
 
 //logger control
 extern bool g_enable_trace;

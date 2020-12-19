@@ -81,7 +81,7 @@ namespace micro
 
             std::stringstream m_body;
 
-            std::map<const std::string, const std::string> m_headers;
+            std::map<std::string, std::string> m_headers;
         };
 
         class http_context : public http_req

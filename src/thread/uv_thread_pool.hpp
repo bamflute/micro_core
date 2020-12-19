@@ -137,9 +137,7 @@ namespace micro
 
                 return ERR_SUCCESS;
             }
-
         };
-
     }
 
 }
