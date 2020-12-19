@@ -14,8 +14,8 @@
 #include <io/channel.hpp>
 
 
-#define MAX_RECV_BUF_LEN       10240
-#define MAX_SEND_BUF_LEN       10240
+#define MAX_RECV_BUF_LEN       (10 * 1024 * 1024)
+#define MAX_SEND_BUF_LEN       (10 * 1024 * 1024)
 #define MAX_QUEUE_SIZE             10240
 
 

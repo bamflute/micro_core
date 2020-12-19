@@ -46,6 +46,17 @@ namespace micro
 
             const channel_source & channel_source() { return this->channel()->channel_source(); }
 
+			channel_state get_state() const 
+			{ 
+				if (m_channel)
+				{
+					return m_channel->get_state();
+				}
+				else
+				{
+					return CHANNEL_INACTIVE;
+				}
+			}
 
             template<typename T>
             void connector_option(std::string name, T value)
@@ -138,6 +149,12 @@ namespace micro
             {
                 if (error)
                 {
+					if (boost::asio::error::already_connected == error.value())
+					{
+						LOG_ERROR << "tcp_connector already connected " << m_channel->channel_source().to_string() << m_channel->addr_info();
+						return;
+					}
+
                     m_connected = false;
                     m_channel->set_state(CHANNEL_INACTIVE);
 
