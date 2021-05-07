@@ -15,6 +15,7 @@
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/manipulators/add_value.hpp>
 
 
 
@@ -30,19 +31,31 @@ extern bool g_enable_warning;
 extern bool g_enable_error;
 extern bool g_enable_fatal;
 
-#define LOG_TRACE               if (g_enable_trace) BOOST_LOG_TRIVIAL(trace)
-#define LOG_DEBUG              if (g_enable_debug) BOOST_LOG_TRIVIAL(debug)
-#define LOG_INFO                  if (g_enable_info) BOOST_LOG_TRIVIAL(info)
-#define LOG_WARNING         if (g_enable_warning) BOOST_LOG_TRIVIAL(warning)
-#define LOG_ERROR              if (g_enable_error) BOOST_LOG_TRIVIAL(error)
-#define LOG_FATAL               if (g_enable_fatal) BOOST_LOG_TRIVIAL(fatal)
+
+#define LOG_TRACE               if (g_enable_trace) BOOST_LOG_TRIVIAL(trace) \
+                                        << boost::log::add_value("Line", __LINE__) \
+                                        << boost::log::add_value("File", static_cast<std::string>(__FILE__).substr(static_cast<std::string>(__FILE__).find_last_of("/\\")+1))
+#define LOG_DEBUG              if (g_enable_debug) BOOST_LOG_TRIVIAL(debug)   \
+                                        << boost::log::add_value("Line", __LINE__) \
+                                        << boost::log::add_value("File", static_cast<std::string>(__FILE__).substr(static_cast<std::string>(__FILE__).find_last_of("/\\")+1))
+#define LOG_INFO                  if (g_enable_info) BOOST_LOG_TRIVIAL(info)  \
+                                        << boost::log::add_value("Line", __LINE__) \
+                                        << boost::log::add_value("File", static_cast<std::string>(__FILE__).substr(static_cast<std::string>(__FILE__).find_last_of("/\\")+1))
+#define LOG_WARNING         if (g_enable_warning) BOOST_LOG_TRIVIAL(warning)  \
+                                        << boost::log::add_value("Line", __LINE__) \
+                                        << boost::log::add_value("File", static_cast<std::string>(__FILE__).substr(static_cast<std::string>(__FILE__).find_last_of("/\\")+1))
+#define LOG_ERROR              if (g_enable_error) BOOST_LOG_TRIVIAL(error)   \
+                                        << boost::log::add_value("Line", __LINE__) \
+                                        << boost::log::add_value("File", static_cast<std::string>(__FILE__).substr(static_cast<std::string>(__FILE__).find_last_of("/\\")+1))
+#define LOG_FATAL               if (g_enable_fatal) BOOST_LOG_TRIVIAL(fatal)  \
+                                        << boost::log::add_value("Line", __LINE__) \
+                                        << boost::log::add_value("File", static_cast<std::string>(__FILE__).substr(static_cast<std::string>(__FILE__).find_last_of("/\\")+1))
 
 
 namespace micro
 {
     namespace core
     {
-
         template<typename ValueType>
         static ValueType set_get_attrib(const char* name, ValueType value) {
             auto attr = logging::attribute_cast<attrs::mutable_constant<ValueType>>(logging::core::get()->get_global_attributes()[name]);
@@ -68,7 +81,7 @@ namespace micro
         {
         public:
 
-            static int32_t init(bf::path log_path)
+            static int32_t init(bf::path log_path, bool print_console)
             {
 
                 boost::log::register_simple_formatter_factory< boost::log::trivial::severity_level, char >("Severity");
@@ -87,18 +100,24 @@ namespace micro
                             boost::log::expressions::stream
                             << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%m-%d %H:%M:%S.%f")
                             << "|" << boost::log::expressions::attr< boost::log::attributes::current_thread_id::value_type>("ThreadID")
+                            << "|" << boost::log::expressions::attr< std::string>("File")
+                            << ":" << boost::log::expressions::attr< int>("Line")
                             << "|" << std::setw(7) << std::setfill(' ') << std::left << boost::log::trivial::severity
                             << "|" << boost::log::expressions::smessage
                             )
                     );
 
-                    boost::log::add_console_log(std::cout, boost::log::keywords::format =  (
-                            boost::log::expressions::stream
-                            << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%m-%d %H:%M:%S.%f")
-                            << "|" << boost::log::expressions::attr< boost::log::attributes::current_thread_id::value_type>("ThreadID")
-                            << "|" << std::setw(7) << std::setfill(' ') << std::left << boost::log::trivial::severity
-                            << "|" << boost::log::expressions::smessage
-                            ));
+                    if (true == print_console)
+                    {
+                        boost::log::add_console_log(std::cout, boost::log::keywords::format =  (
+                                boost::log::expressions::stream
+                                << boost::log::expressions::format_date_time<boost::posix_time::ptime>("TimeStamp", "%m-%d %H:%M:%S.%f")
+                                << "|" << boost::log::expressions::attr< boost::log::attributes::current_thread_id::value_type>("ThreadID")
+                                << "|" << std::setw(7) << std::setfill(' ') << std::left << boost::log::trivial::severity
+                                << "|" << boost::log::expressions::smessage
+                                ));
+                    }
+                    
 
                     boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
                     sink->locked_backend()->auto_flush(true);

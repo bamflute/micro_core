@@ -32,7 +32,6 @@
     MSG_BUS_SUB(MSG_NAME, [this](std::shared_ptr<message> &msg) { return send(msg);  }); \
     m_msg_invokers[MSG_NAME] = std::bind(FUNC_PTR, this, std::placeholders::_1);
 
-
 namespace micro
 {
     namespace core
@@ -204,13 +203,12 @@ namespace micro
 
             int32_t exit() { return service_exit(); }
 
-            int32_t run()
+            virtual int32_t run()
             {
                 msg_ptr_type msg;
 
                 while (!m_exited)
                 {
-
                     {
                         std::unique_lock<std::mutex> lock(m_mutex);
                         std::chrono::milliseconds ms(100);
@@ -228,6 +226,7 @@ namespace micro
                     while (!m_worker_queue->empty())
                     {
                         msg = m_worker_queue->front();
+                        m_worker_queue->pop();
 
                         try
                         {
@@ -237,8 +236,6 @@ namespace micro
                         {
                             LOG_ERROR << "!!!!!! module on invoke exception: " << this->name() << " msg name: " << msg->get_name();
                         }
-
-                        m_worker_queue->pop();
                     }
 
                 }
@@ -286,7 +283,7 @@ namespace micro
 
         protected:
 
-            int32_t on_invoke(msg_ptr_type msg)
+            virtual int32_t on_invoke(msg_ptr_type msg)
             {
                 if (msg->get_name() == BROADCAST_TIMER_TICK)
                 {

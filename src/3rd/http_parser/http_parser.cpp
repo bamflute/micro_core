@@ -280,21 +280,21 @@ enum state
   { s_dead = 1 /* important that this is > 0 */
 
   , s_start_req_or_res
-  , s_res_or_resp_H
+  , s_inst_or_resp_H
   , s_start_res
-  , s_res_H
-  , s_res_HT
-  , s_res_HTT
-  , s_res_HTTP
-  , s_res_http_major
-  , s_res_http_dot
-  , s_res_http_minor
-  , s_res_http_end
-  , s_res_first_status_code
-  , s_res_status_code
-  , s_res_status_start
-  , s_res_status
-  , s_res_line_almost_done
+  , s_inst_H
+  , s_inst_HT
+  , s_inst_HTT
+  , s_inst_HTTP
+  , s_inst_http_major
+  , s_inst_http_dot
+  , s_inst_http_minor
+  , s_inst_http_end
+  , s_inst_first_status_code
+  , s_inst_status_code
+  , s_inst_status_start
+  , s_inst_status
+  , s_inst_line_almost_done
 
   , s_start_req
 
@@ -697,7 +697,7 @@ size_t http_parser_execute (http_parser *parser,
   case s_req_fragment:
     url_mark = data;
     break;
-  case s_res_status:
+  case s_inst_status:
     status_mark = data;
     break;
   default:
@@ -731,7 +731,7 @@ reexecute:
         parser->content_length = ULLONG_MAX;
 
         if (ch == 'H') {
-          UPDATE_STATE(s_res_or_resp_H);
+          UPDATE_STATE(s_inst_or_resp_H);
 
           CALLBACK_NOTIFY(message_begin);
         } else {
@@ -743,10 +743,10 @@ reexecute:
         break;
       }
 
-      case s_res_or_resp_H:
+      case s_inst_or_resp_H:
         if (ch == 'T') {
           parser->type = HTTP_RESPONSE;
-          UPDATE_STATE(s_res_HT);
+          UPDATE_STATE(s_inst_HT);
         } else {
           if (UNLIKELY(ch != 'E')) {
             SET_ERRNO(HPE_INVALID_CONSTANT);
@@ -768,7 +768,7 @@ reexecute:
         parser->content_length = ULLONG_MAX;
 
         if (ch == 'H') {
-          UPDATE_STATE(s_res_H);
+          UPDATE_STATE(s_inst_H);
         } else {
           SET_ERRNO(HPE_INVALID_CONSTANT);
           goto error;
@@ -778,69 +778,69 @@ reexecute:
         break;
       }
 
-      case s_res_H:
+      case s_inst_H:
         STRICT_CHECK(ch != 'T');
-        UPDATE_STATE(s_res_HT);
+        UPDATE_STATE(s_inst_HT);
         break;
 
-      case s_res_HT:
+      case s_inst_HT:
         STRICT_CHECK(ch != 'T');
-        UPDATE_STATE(s_res_HTT);
+        UPDATE_STATE(s_inst_HTT);
         break;
 
-      case s_res_HTT:
+      case s_inst_HTT:
         STRICT_CHECK(ch != 'P');
-        UPDATE_STATE(s_res_HTTP);
+        UPDATE_STATE(s_inst_HTTP);
         break;
 
-      case s_res_HTTP:
+      case s_inst_HTTP:
         STRICT_CHECK(ch != '/');
-        UPDATE_STATE(s_res_http_major);
+        UPDATE_STATE(s_inst_http_major);
         break;
 
-      case s_res_http_major:
+      case s_inst_http_major:
         if (UNLIKELY(!IS_NUM(ch))) {
           SET_ERRNO(HPE_INVALID_VERSION);
           goto error;
         }
 
         parser->http_major = ch - '0';
-        UPDATE_STATE(s_res_http_dot);
+        UPDATE_STATE(s_inst_http_dot);
         break;
 
-      case s_res_http_dot:
+      case s_inst_http_dot:
       {
         if (UNLIKELY(ch != '.')) {
           SET_ERRNO(HPE_INVALID_VERSION);
           goto error;
         }
 
-        UPDATE_STATE(s_res_http_minor);
+        UPDATE_STATE(s_inst_http_minor);
         break;
       }
 
-      case s_res_http_minor:
+      case s_inst_http_minor:
         if (UNLIKELY(!IS_NUM(ch))) {
           SET_ERRNO(HPE_INVALID_VERSION);
           goto error;
         }
 
         parser->http_minor = ch - '0';
-        UPDATE_STATE(s_res_http_end);
+        UPDATE_STATE(s_inst_http_end);
         break;
 
-      case s_res_http_end:
+      case s_inst_http_end:
       {
         if (UNLIKELY(ch != ' ')) {
           SET_ERRNO(HPE_INVALID_VERSION);
           goto error;
         }
 
-        UPDATE_STATE(s_res_first_status_code);
+        UPDATE_STATE(s_inst_first_status_code);
         break;
       }
 
-      case s_res_first_status_code:
+      case s_inst_first_status_code:
       {
         if (!IS_NUM(ch)) {
           if (ch == ' ') {
@@ -851,20 +851,20 @@ reexecute:
           goto error;
         }
         parser->status_code = ch - '0';
-        UPDATE_STATE(s_res_status_code);
+        UPDATE_STATE(s_inst_status_code);
         break;
       }
 
-      case s_res_status_code:
+      case s_inst_status_code:
       {
         if (!IS_NUM(ch)) {
           switch (ch) {
             case ' ':
-              UPDATE_STATE(s_res_status_start);
+              UPDATE_STATE(s_inst_status_start);
               break;
             case CR:
             case LF:
-              UPDATE_STATE(s_res_status_start);
+              UPDATE_STATE(s_inst_status_start);
               REEXECUTE();
               break;
             default:
@@ -885,10 +885,10 @@ reexecute:
         break;
       }
 
-      case s_res_status_start:
+      case s_inst_status_start:
       {
         MARK(status);
-        UPDATE_STATE(s_res_status);
+        UPDATE_STATE(s_inst_status);
         parser->index = 0;
 
         if (ch == CR || ch == LF)
@@ -897,9 +897,9 @@ reexecute:
         break;
       }
 
-      case s_res_status:
+      case s_inst_status:
         if (ch == CR) {
-          UPDATE_STATE(s_res_line_almost_done);
+          UPDATE_STATE(s_inst_line_almost_done);
           CALLBACK_DATA(status);
           break;
         }
@@ -912,7 +912,7 @@ reexecute:
 
         break;
 
-      case s_res_line_almost_done:
+      case s_inst_line_almost_done:
         STRICT_CHECK(ch != LF);
         UPDATE_STATE(s_header_field_start);
         break;

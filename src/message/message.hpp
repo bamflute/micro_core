@@ -42,7 +42,7 @@ namespace micro
             std::string to_string() const
             {
                 std::stringstream stream;
-                stream << " channel source: " << m_channel_type << "-" << m_channel_id;
+                stream << " channel source: " << channel_type(m_channel_type) << "-" << m_channel_id ;
                 return  stream.str();
             }
 

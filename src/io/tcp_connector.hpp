@@ -40,11 +40,13 @@ namespace micro
 
             bool is_connected() { return m_connected; }            
 
-            context_chain & context_chain() { return m_context_chain; }
+            context_chain & get_context_chain() { return m_context_chain; }
 
             channel_ptr_type channel() { return m_channel; }
 
-            const channel_source & channel_source() { return this->channel()->channel_source(); }
+            const channel_source & get_channel_source() { return this->channel()->get_channel_source(); }
+            
+            const int32_t & get_reconnect_cnt() {return reconnect_cnt;}
 
 			channel_state get_state() const 
 			{ 
@@ -129,9 +131,12 @@ namespace micro
                 this->m_remote_addr = remote_addr;
                 return connect();
             }
+            
+            endpoint_type get_connect_addr() {return m_remote_addr;}
 
             virtual int32_t connect()
             {
+                reconnect_cnt++;
                 if (nullptr == m_connector_thr_pool || nullptr == m_channel_thr_pool)
                 {
                     return ERR_FAILED;
@@ -139,6 +144,9 @@ namespace micro
 
                 //handler chain
                 m_context_chain.fire_connect(m_remote_addr);
+                
+                LOG_DEBUG << "start connect to " << m_remote_addr;
+                LOG_INFO << "socket open:" << m_channel->is_open();
 
                 m_channel->socket().async_connect(m_remote_addr, boost::bind(&tcp_connector::on_connect, shared_from_this(), boost::asio::placeholders::error));
 
@@ -147,11 +155,13 @@ namespace micro
 
             virtual void on_connect(const boost::system::error_code& error)
             {
+                LOG_INFO << "socket open:" << m_channel->is_open();
+
                 if (error)
                 {
 					if (boost::asio::error::already_connected == error.value())
 					{
-						LOG_ERROR << "tcp_connector already connected " << m_channel->channel_source().to_string() << m_channel->addr_info();
+						LOG_ERROR << "tcp_connector already connected " << m_channel->get_channel_source().to_string() << m_channel->addr_info();
 						return;
 					}
 
@@ -160,25 +170,24 @@ namespace micro
 
                     if (boost::asio::error::operation_aborted == error.value())
                     {
-                        LOG_ERROR << "tcp_connector connect aborted " << m_channel->channel_source().to_string() << m_channel->addr_info();
-                        return;
+                        LOG_ERROR << "tcp_connector connect aborted " << m_channel->get_channel_source().to_string() << m_channel->addr_info();
+//                        return;
                     }
 
-                    LOG_ERROR << "tcp_connector connect error: " << error.value() << m_channel->channel_source().to_string() << m_channel->addr_info();
+                    LOG_ERROR << "tcp_connector connect error: " << error.value() << " error msg:" << error.message() << m_channel->get_channel_source().to_string() << m_channel->addr_info();
 
                     //handler chain
-                    std::runtime_error e("tcp connector error: " + error.value());
+                    std::runtime_error e("tcp connector error: " + std::to_string(error.value()));
                     m_context_chain.fire_exception_caught(e);
 
                     return;
                 }
 
                 m_connected = true;
-
-                m_channel->init();
-
-                m_channel->set_state(CHANNEL_ACTIVE);
                 m_channel->init_addr_info();
+                m_channel->init();
+                reconnect_cnt = 0;
+                m_channel->set_state(CHANNEL_ACTIVE);
 
                 //handler chain
                 m_context_chain.fire_connected();
@@ -226,6 +235,8 @@ namespace micro
             initializer_ptr_type m_connector_initializer;
 
             endpoint_type m_remote_addr;
+            
+            int32_t reconnect_cnt = 0;;
             
         };
 

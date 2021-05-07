@@ -34,7 +34,75 @@ public:
     static uint64_t get_micro_seconds_from_19700101();
 
     static uint64_t get_microseconds_of_day();
+    
+    static std::string time_2_str(time_t t)
+    {
+        struct tm _tm;
+#ifdef WIN32
+        int err = 0;
+        err = localtime_s(&_tm, &t);
+        if (err != 0)
+        {
+            //std::cout << "get local time err: " << err << std::endl;
+            return "";
+        }
+#else
+        localtime_r(&t, &_tm);
+#endif
+        char buf[256];
+        memset(buf, 0, sizeof(char) * 256);
+        strftime(buf, sizeof(char) * 256, "%x %X", &_tm);
 
+        return buf;
+    }
+    
+    static std::string time_2_str_date(time_t t)
+    {
+        struct tm _tm;
+#ifdef WIN32
+        int err = 0;
+        err = localtime_s(&_tm, &t);
+        if (err != 0)
+        {
+            //std::cout << "get local time err: " << err << std::endl;
+            return "";
+        }
+#else
+        localtime_r(&t, &_tm);
+#endif
+        char buf[256];
+        memset(buf, 0, sizeof(char) * 256);
+        strftime(buf, sizeof(char) * 256, "%G%m%d", &_tm);
+
+        return buf;
+    }
+    
+    static std::string time_2_str_time(time_t t)
+    {
+        struct tm _tm;
+#ifdef WIN32
+        int err = 0;
+        err = localtime_s(&_tm, &t);
+        if (err != 0)
+        {
+            //std::cout << "get local time err: " << err << std::endl;
+            return "";
+        }
+#else
+        localtime_r(&t, &_tm);
+#endif
+        char buf[256];
+        memset(buf, 0, sizeof(char) * 256);
+        strftime(buf, sizeof(char) * 256, "%G%m%d%H%M%S", &_tm);
+        return buf;
+    }
+
+    static std::string time_2_utc(time_t t)
+    {
+        std::string temp = std::asctime(std::gmtime(&t));
+        
+        return temp.erase(temp.find("\n"));
+    }
 };
 
 extern bool g_enable_time_cost;

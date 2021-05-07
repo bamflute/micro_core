@@ -60,7 +60,7 @@ namespace micro
             virtual void fire_connect(const endpoint_type &remote_addr) = 0;
 
             virtual void fire_close() = 0;
-
+            
         protected:
 
             any_map m_vars;

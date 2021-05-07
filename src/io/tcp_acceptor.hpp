@@ -41,7 +41,7 @@ namespace micro
             virtual ~tcp_acceptor() = default;
 
 
-            context_chain & context_chain() { return m_context_chain; }
+            context_chain & get_context_chain() { return m_context_chain; }
 
             template<typename T>
             void acceptor_option(std::string name, T value)
@@ -162,7 +162,7 @@ namespace micro
                         return ERR_FAILED;
                     }
 
-                    std::runtime_error err("tcp acceptor error: " + error.value());
+                    std::runtime_error err("tcp acceptor error: " + std::to_string(error.value()));
                     m_context_chain.fire_exception_caught(err);
 
                     accept();
@@ -173,9 +173,11 @@ namespace micro
                 try
                 {
                     //handler chain
+                    ch->init_addr_info();
+                    ch->init();
+                    ch->set_state(CHANNEL_ACTIVE);
                     m_context_chain.fire_accepted();
 
-                    ch->init();
                     ch->read();
                 }
                 catch (const boost::exception & e)

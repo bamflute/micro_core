@@ -39,6 +39,31 @@ namespace micro
 
                 return m_opts[name];
             }
+            
+            template<typename T>
+            T get(std::string name, T default_value)
+            {
+                auto it = m_opts.find(name);
+                if (it == m_opts.end())
+                {
+                    return default_value;
+                }
+
+                return boost::any_cast<T>(m_opts[name]);
+            }
+            
+            template<typename T>
+            bool get_a(std::string name, T & value)
+            {
+                auto it = m_opts.find(name);
+                if (it == m_opts.end())
+                {
+                    return false;
+                }
+
+                value =  boost::any_cast<T>(m_opts[name]);
+                return true;
+            }
 
             int count(std::string name)
             {

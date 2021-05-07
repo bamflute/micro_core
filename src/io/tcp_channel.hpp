@@ -17,7 +17,16 @@
 #define MAX_RECV_BUF_LEN       (10 * 1024 * 1024)
 #define MAX_SEND_BUF_LEN       (10 * 1024 * 1024)
 #define MAX_QUEUE_SIZE             10240
+#define LOGIN_STATUS                                   "login_status"
 
+enum link_session_status
+{
+    LOGIN_UNKNOWN = 0,
+    LOGINING = 1,
+    LOGIN_SUCCESS = 2,
+    LOGIN_FAILED = 3,
+    CHANNEL_INIT = 4
+};
 
 namespace micro
 {
@@ -50,7 +59,7 @@ namespace micro
                 , m_socket(*ios)
                 , m_addr_info("addr info: UNKNOWN")
             {
-
+                set(LOGIN_STATUS, LOGIN_UNKNOWN);
             }
 
             virtual ~tcp_channel()
@@ -70,13 +79,17 @@ namespace micro
             template<typename T>
             void option(std::string name, T value)
             {
-                m_opts.option(name, value);
+//                m_opts.option(name, value);
+                m_opts.set(name, value);
             }
 
             context_chain & inbound_pipeline() { return m_inbound_chain; }
 
             context_chain & outbound_pipeline() { return m_outbound_chain; }
+            
+            ios_ptr_type get_ios() {return m_ios;}
 
+            bool is_open() {return m_socket.is_open();}
 
             void channel_inbound_initializer(initializer_ptr_type io_handler_initializer)
             {
@@ -130,7 +143,7 @@ namespace micro
                 return m_queue.size() ? m_queue.front() : nullptr; 
             }
 
-            const channel_source & channel_source() const { return m_channel_id; }
+            const channel_type_id & get_channel_source()  { return m_channel_id; }
 
             void set_state(channel_state state) { m_state = state; }
 
@@ -142,24 +155,39 @@ namespace micro
             {
                 m_addr_info = " local: " + m_socket.local_endpoint().address().to_string() + " " + std::to_string(m_socket.local_endpoint().port()) + " "
                                         + "remote: " + m_socket.remote_endpoint().address().to_string() + " " + std::to_string(m_socket.remote_endpoint().port());
+                m_remote_addr = m_socket.remote_endpoint();
+                m_local_addr = m_socket.local_endpoint();
+
             }
 
             virtual int32_t init()
             {
                 LOG_DEBUG << "tcp channel init: " << m_str_channel_id;
-
+                
                 init_opt();
 
                 init_buf();
 
                 m_queue.clear();
+                
+                m_inbound_chain.fire_channel_active();
 
                 return ERR_SUCCESS;
             }
+            
+            endpoint_type get_remote_addr() {return m_remote_addr;}
+
+            endpoint_type get_local_addr()  {return m_local_addr;}
 
             virtual int32_t close()
             {
-                m_state = CHANNEL_INACTIVE;
+                if (m_state == CHANNEL_CLOSE)
+                {
+                    LOG_DEBUG << "channel have been close";
+                    return ERR_SUCCESS;
+                }
+                
+                m_state = CHANNEL_CLOSE;
                 LOG_DEBUG << "tcp channel close: " << m_str_channel_id << m_addr_info;
 
                 boost::system::error_code error;
@@ -178,9 +206,16 @@ namespace micro
 
                 m_queue.clear();
 
-                m_recv_buf->reset();
-                m_send_buf->reset();
-
+                if (m_recv_buf != nullptr)
+                {
+                    m_recv_buf->reset();
+                }
+                
+                if (m_send_buf != nullptr)
+                {
+                    m_send_buf->reset();
+                }
+                m_inbound_chain.fire_channel_inactive();
                 return ERR_SUCCESS;
             }
 
@@ -193,7 +228,7 @@ namespace micro
 
             virtual int32_t read()
             {
-                if (CHANNEL_INACTIVE == m_state)
+                if (CHANNEL_ACTIVE != m_state)
                 {
                     return ERR_FAILED;
                 }
@@ -223,7 +258,7 @@ namespace micro
 
             virtual int32_t write(std::shared_ptr<message> msg)
             {
-                if (CHANNEL_INACTIVE == m_state)
+                if (CHANNEL_ACTIVE != m_state)
                 {
                     LOG_ERROR << "tcp channel write error: channel INACTIVE" << this->m_channel_id.to_string() << addr_info();
                     return ERR_FAILED;
@@ -257,7 +292,7 @@ namespace micro
 
                     assert(nullptr != shared_from_this());
 
-                    if (CHANNEL_INACTIVE == m_state)    //for safety and efficiency
+                    if (CHANNEL_ACTIVE != m_state)    //for safety and efficiency
                     {
                         LOG_ERROR << "tcp channel write error: channel INACTIVE" << this->m_channel_id.to_string() << addr_info();
                         return ERR_FAILED;
@@ -295,7 +330,6 @@ namespace micro
             }
 
         protected:
-
             void init_opt()
             {
                 m_recv_buf_len = m_opts.count("MAX_RECV_BUF_LEN") ? boost::any_cast<uint32_t>(m_opts.get("MAX_RECV_BUF_LEN")) : MAX_RECV_BUF_LEN;
@@ -305,6 +339,8 @@ namespace micro
                 m_socket.non_blocking(true);
                 m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
                 m_socket.set_option(boost::asio::socket_base::keep_alive(true));
+                m_socket.set_option(boost::asio::socket_base::reuse_address(true));
+
             }
 
             void init_buf()
@@ -315,7 +351,7 @@ namespace micro
 
             void on_read(const boost::system::error_code& error, size_t bytes_transferred)
             {
-                if (CHANNEL_INACTIVE == m_state)
+                if (CHANNEL_ACTIVE != m_state)
                 {
                     LOG_ERROR << "tcp channel is INACTIVE on read and exit directly" << m_str_channel_id << addr_info();
                     return;
@@ -335,7 +371,7 @@ namespace micro
                     if (boost::asio::error::operation_aborted == error.value())
                     {
                         LOG_ERROR << "tcp channel on read aborted: " << error.value() << " " << error.message() << m_str_channel_id << addr_info();
-                        return;
+//                        return;
                     }
 
                     LOG_ERROR << "tcp channel on read error: " << error.value() << " " << error.message() << m_str_channel_id << addr_info();
@@ -391,7 +427,7 @@ namespace micro
 
             void on_write(const boost::system::error_code& error, size_t bytes_transferred)
             {
-                if (CHANNEL_INACTIVE == m_state)
+                if (CHANNEL_ACTIVE != m_state)
                 {
                     return;
                 }
@@ -404,12 +440,12 @@ namespace micro
                     if (boost::asio::error::operation_aborted == error.value())
                     {
                         LOG_ERROR << "tcp channel on write aborted: " << error.value() << " " << error.message() << m_str_channel_id << addr_info();
-                        return;
+//                        return;
                     }
 
                     LOG_ERROR << "tcp channel on write aborted: " << error.value() << " " << error.message() << m_str_channel_id << addr_info();
 
-                    std::runtime_error e("tcp connector on write error: " + error.message());
+                    std::runtime_error e("tcp channel on write error: " + error.message());
                     m_outbound_chain.fire_exception_caught(e);
                     return;
                 }
@@ -479,7 +515,7 @@ namespace micro
 
             void do_write(std::shared_ptr<io_streambuf> &msg_buf)
             {
-                if (CHANNEL_INACTIVE == m_state)
+                if (CHANNEL_ACTIVE != m_state)
                 {
                     return;
                 }
